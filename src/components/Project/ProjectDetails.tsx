@@ -1,0 +1,1337 @@
+import React from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { TreeSelect } from "@/components/ui/treeselect";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  CheckIcon,
+  UsersIcon,
+  BookOpenIcon,
+  StarIcon,
+  TagIcon,
+  SaveIcon,
+  XIcon,
+  AlertCircleIcon,
+  PlusIcon,
+  PlusCircleIcon,
+  TrashIcon,
+  UserIcon,
+  EditIcon,
+  InfoIcon,
+  ExternalLinkIcon,
+  SearchIcon,
+} from "lucide-react";
+import AddAuthorDialog from "@/components/Project/dialogs/AddAuthorDialog";
+import NewAuthorDialog from "@/components/Project/dialogs/NewAuthorDialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import DraggableAuthorList from "@/components/Project/DraggableAuthorList";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { Link } from "react-router-dom";
+import { mockAuthors, getBiographiesForAuthor } from "@/lib/mockData/authors";
+import { mockSeries } from "@/lib/mockData/series";
+import { mockVerlagsmarken } from "@/lib/mockData/verlagsmarken";
+
+interface ProjectDetailsProps {
+  project: any;
+  projectAuthors: any[];
+  isEditing?: boolean;
+  editedProject?: any;
+  onInputChange?: (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => void;
+  onSelectChange?: (name: string, value: any) => void;
+  onSave?: () => void;
+  onCancel?: () => void;
+  seriesList?: any[];
+  genreOptions?: any[];
+
+  handleRemoveAuthorFromProject?: (authorId: string) => void;
+  setIsAuthorDialogOpen?: (isOpen: boolean) => void;
+  setIsNewAuthorDialogOpen?: (isOpen: boolean) => void;
+  setIsNewSeriesDialogOpen?: (isOpen: boolean) => void;
+  handleEditToggle?: () => void;
+  allAuthors?: any[];
+  authorBiographies?: any[];
+  selectedAuthor?: string;
+  selectedAuthorRole?: string;
+  selectedBiography?: string;
+  handleAuthorChange?: (authorId: string) => void;
+  setSelectedAuthorRole?: (role: string) => void;
+  setSelectedBiography?: (biographyId: string) => void;
+  handleAddAuthorToProject?: () => void;
+  handleAuthorCreated?: (authorData: any) => void;
+}
+
+interface AuthorCardEditingState {
+  isEditing: boolean;
+  editedData: {
+    series?: string;
+    publisher?: string;
+  };
+}
+
+const ProjectDetails: React.FC<ProjectDetailsProps> = ({
+  project,
+  projectAuthors,
+  isEditing = false,
+  editedProject,
+  onInputChange,
+  onSelectChange,
+  onSave,
+  onCancel,
+  seriesList = [],
+  genreOptions = [],
+
+  handleRemoveAuthorFromProject,
+  setIsAuthorDialogOpen,
+  setIsNewAuthorDialogOpen,
+  setIsNewSeriesDialogOpen,
+  handleEditToggle,
+  allAuthors = [],
+  authorBiographies = [],
+  selectedAuthor = "",
+  selectedAuthorRole = "Autor",
+  selectedBiography = "",
+  handleAuthorChange,
+  setSelectedAuthorRole,
+  setSelectedBiography,
+  handleAddAuthorToProject,
+  handleAuthorCreated,
+}) => {
+  const currentProject = isEditing ? editedProject : project;
+  const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
+  const [modalEditedProject, setModalEditedProject] = React.useState(project);
+  const [authorCardState, setAuthorCardState] =
+    React.useState<AuthorCardEditingState>({
+      isEditing: false,
+      editedData: {
+        series: project?.series || "",
+        publisher: project?.publisher || "",
+      },
+    });
+
+  // State for displaying selected data from localStorage
+  const [selectedProjectData, setSelectedProjectData] = React.useState<{
+    selectedSeries?: any;
+    selectedPublisher?: any;
+    selectedAuthors?: any[];
+  }>({});
+
+  const [isAuthorDialogOpen, setIsAuthorDialogOpenLocal] =
+    React.useState(false);
+  const [isNewAuthorDialogOpen, setIsNewAuthorDialogOpenLocal] =
+    React.useState(false);
+  const [localAuthors, setLocalAuthors] = React.useState(projectAuthors);
+  const [isDragging, setIsDragging] = React.useState(false);
+
+  // Selection dialogs state
+  const [isSeriesSelectionOpen, setIsSeriesSelectionOpen] =
+    React.useState(false);
+  const [isPublisherSelectionOpen, setIsPublisherSelectionOpen] =
+    React.useState(false);
+  const [isAuthorSelectionOpen, setIsAuthorSelectionOpen] =
+    React.useState(false);
+
+  // Selection state
+  const [selectedSeriesId, setSelectedSeriesId] = React.useState("");
+  const [selectedPublisherId, setSelectedPublisherId] = React.useState("");
+  const [selectedAuthorId, setSelectedAuthorId] = React.useState("");
+  const [selectedBiographyId, setSelectedBiographyId] = React.useState("");
+  const [selectedAuthorRoleLocal, setSelectedAuthorRoleLocal] =
+    React.useState("Autor");
+
+  // Get project language for biography filtering
+  const projectLanguage = project?.languages?.[0] || "de"; // Default to German
+
+  // Get available biographies for selected author, filtered by project language
+  const availableBiographies = React.useMemo(() => {
+    if (!selectedAuthorId) return [];
+    const biographies = getBiographiesForAuthor(selectedAuthorId);
+    return biographies.filter((bio) => bio.language === projectLanguage);
+  }, [selectedAuthorId, projectLanguage]);
+
+  // Update local authors when projectAuthors changes
+  React.useEffect(() => {
+    setLocalAuthors(projectAuthors);
+  }, [projectAuthors]);
+
+  // Load selected data from localStorage on component mount
+  React.useEffect(() => {
+    const loadSelectedData = () => {
+      try {
+        const projectData = JSON.parse(
+          localStorage.getItem(`project_${project.id}`) || "{}",
+        );
+        setSelectedProjectData({
+          selectedSeries: projectData.selectedSeries,
+          selectedPublisher: projectData.selectedPublisher,
+          selectedAuthors: projectData.selectedAuthors || [],
+        });
+      } catch (error) {
+        console.error("Error loading selected data from localStorage:", error);
+      }
+    };
+
+    loadSelectedData();
+  }, [project.id]);
+
+  const handleDragEnd = (result: any) => {
+    setIsDragging(false);
+    if (!result.destination) return;
+
+    const items = Array.from(localAuthors);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update display_order for all items
+    const updatedItems = items.map((item, index) => ({
+      ...item,
+      display_order: index,
+    }));
+
+    setLocalAuthors(updatedItems);
+    // Here you would typically save the new order to the backend
+    console.log("New author order:", updatedItems);
+  };
+
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+
+  const handleAuthorCardEdit = () => {
+    setAuthorCardState({
+      isEditing: true,
+      editedData: {
+        series: project?.series || "",
+        publisher: project?.publisher || "",
+      },
+    });
+  };
+
+  const handleAuthorCardSave = () => {
+    // Here you would typically save the data to the backend
+    console.log("Saving author card data:", authorCardState.editedData);
+    setAuthorCardState((prev) => ({ ...prev, isEditing: false }));
+  };
+
+  const handleAuthorCardCancel = () => {
+    setAuthorCardState({
+      isEditing: false,
+      editedData: {
+        series: project?.series || "",
+        publisher: project?.publisher || "",
+      },
+    });
+  };
+
+  const handleAuthorCardInputChange = (field: string, value: string) => {
+    setAuthorCardState((prev) => ({
+      ...prev,
+      editedData: {
+        ...prev.editedData,
+        [field]: value,
+      },
+    }));
+  };
+
+  // Selection handlers
+  const handleSeriesSelection = () => {
+    if (selectedSeriesId) {
+      const selectedSeries = mockSeries.find((s) => s.id === selectedSeriesId);
+      console.log("Selected series:", selectedSeries);
+
+      // Store in localStorage
+      const projectData = JSON.parse(
+        localStorage.getItem(`project_${project.id}`) || "{}",
+      );
+      projectData.selectedSeries = selectedSeries;
+      localStorage.setItem(
+        `project_${project.id}`,
+        JSON.stringify(projectData),
+      );
+
+      setIsSeriesSelectionOpen(false);
+      setSelectedSeriesId("");
+
+      // Update local state to reflect the change immediately
+      setSelectedProjectData((prev) => ({
+        ...prev,
+        selectedSeries: selectedSeries,
+      }));
+    }
+  };
+
+  const handlePublisherSelection = () => {
+    if (selectedPublisherId) {
+      const selectedPublisher = mockVerlagsmarken.find(
+        (p) => p.id === selectedPublisherId,
+      );
+      console.log("Selected publisher:", selectedPublisher);
+
+      // Store in localStorage
+      const projectData = JSON.parse(
+        localStorage.getItem(`project_${project.id}`) || "{}",
+      );
+      projectData.selectedPublisher = selectedPublisher;
+      localStorage.setItem(
+        `project_${project.id}`,
+        JSON.stringify(projectData),
+      );
+
+      setIsPublisherSelectionOpen(false);
+      setSelectedPublisherId("");
+
+      // Update local state to reflect the change immediately
+      setSelectedProjectData((prev) => ({
+        ...prev,
+        selectedPublisher: selectedPublisher,
+      }));
+    }
+  };
+
+  const handleAuthorSelection = () => {
+    if (selectedAuthorId && selectedBiographyId) {
+      const selectedAuthor = mockAuthors.find((a) => a.id === selectedAuthorId);
+      const selectedBiography = availableBiographies.find(
+        (b) => b.id === selectedBiographyId,
+      );
+      console.log(
+        "Selected author:",
+        selectedAuthor,
+        "with biography:",
+        selectedBiography,
+        "and role:",
+        selectedAuthorRoleLocal,
+      );
+
+      // Store in localStorage
+      const projectData = JSON.parse(
+        localStorage.getItem(`project_${project.id}`) || "{}",
+      );
+      if (!projectData.selectedAuthors) {
+        projectData.selectedAuthors = [];
+      }
+      projectData.selectedAuthors.push({
+        author: selectedAuthor,
+        biography: selectedBiography,
+        role: selectedAuthorRoleLocal,
+      });
+      localStorage.setItem(
+        `project_${project.id}`,
+        JSON.stringify(projectData),
+      );
+
+      setIsAuthorSelectionOpen(false);
+      setSelectedAuthorId("");
+      setSelectedBiographyId("");
+      setSelectedAuthorRoleLocal("Autor");
+
+      // Update local state to reflect the change immediately
+      setSelectedProjectData((prev) => ({
+        ...prev,
+        selectedAuthors: [
+          ...(prev.selectedAuthors || []),
+          {
+            author: selectedAuthor,
+            biography: selectedBiography,
+            role: selectedAuthorRoleLocal,
+          },
+        ],
+      }));
+    }
+  };
+
+  // Reset biography selection when author changes
+  React.useEffect(() => {
+    setSelectedBiographyId("");
+  }, [selectedAuthorId]);
+
+  // Modal handlers
+  const handleModalInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setModalEditedProject((prev: any) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleModalSelectChange = (name: string, value: any) => {
+    setModalEditedProject((prev: any) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleModalSave = () => {
+    // Here you would typically save the data to the backend
+    console.log("Saving modal project data:", modalEditedProject);
+    onSave?.();
+    setIsEditModalOpen(false);
+  };
+
+  const handleModalCancel = () => {
+    setModalEditedProject(project);
+    setIsEditModalOpen(false);
+  };
+
+  const handleOpenEditModal = () => {
+    setModalEditedProject(project);
+    setIsEditModalOpen(true);
+  };
+
+  return (
+    <>
+      {/* Project Details Card */}
+
+      <Card className="shadow-sm rounded-xl border-gray-200">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex justify-between items-center text-xl font-bold text-gray-900">
+            <div className="flex items-center">
+              <StarIcon className="h-6 w-6 mr-3 text-blue-600" />
+              Vermarktungsdaten
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleOpenEditModal} size="sm">
+                <EditIcon className="h-4 w-4 mr-2" />
+                Bearbeiten
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="prose max-w-none">
+            <p className="text-gray-700">
+              {project.description || (
+                <span className="text-muted-foreground italic">
+                  Keine Beschreibung vorhanden
+                </span>
+              )}
+            </p>
+          </div>
+
+          {/* Marketing Data */}
+          <>
+            {project.slogan && (
+              <div className="mt-6">
+                <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 mb-8">
+                  <p className="text-xl font-semibold text-center italic text-gray-800">
+                    "{project.slogan}"
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {project.target_audience && (
+              <div className="mt-8">
+                <h4 className="font-semibold text-base text-gray-800 mb-4 flex items-center">
+                  Für wen eignet sich dieses Buch
+                </h4>
+                <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+                  <p className="text-gray-700 leading-relaxed">
+                    {project.target_audience}
+                  </p>
+
+                  {Array.isArray(project.target_audience_groups) &&
+                    project.target_audience_groups.length > 0 && (
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        {project.target_audience_groups.map(
+                          (group: string, index: number) => (
+                            <Badge
+                              key={index}
+                              className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200 px-3 py-1"
+                            >
+                              {group}
+                            </Badge>
+                          ),
+                        )}
+                      </div>
+                    )}
+                </div>
+              </div>
+            )}
+
+            {project.selling_points && (
+              <div className="mt-8">
+                <h4 className="font-semibold text-base text-gray-800 mb-4 flex items-center">
+                  Highlights
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(project.selling_points || "")
+                    .split(",")
+                    .map((point: string, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-start bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <CheckIcon className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-700">{point.trim()}</span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Keywords Section */}
+            {project.keywords && (
+              <div className="mt-8">
+                <h4 className="font-semibold text-base text-gray-800 mb-4 flex items-center">
+                  Suchbegriffe
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {project.keywords
+                    .split(",")
+                    .map((keyword: string, index: number) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200 px-3 py-1"
+                      >
+                        {keyword.trim()}
+                      </Badge>
+                    ))}
+                </div>
+              </div>
+            )}
+          </>
+        </CardContent>
+      </Card>
+
+      {/* Edit Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Vermarktungsdaten bearbeiten</DialogTitle>
+            <DialogDescription>
+              Bearbeite die Vermarktungsdaten für dein Buchprojekt.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6">
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="modal-description">Beschreibung</Label>
+              <Textarea
+                id="modal-description"
+                name="description"
+                value={modalEditedProject?.description || ""}
+                onChange={handleModalInputChange}
+                rows={4}
+              />
+            </div>
+
+            {/* Slogan */}
+            <div className="space-y-2">
+              <Label htmlFor="modal-slogan">Slogan</Label>
+              <Input
+                id="modal-slogan"
+                name="slogan"
+                value={modalEditedProject?.slogan || ""}
+                onChange={handleModalInputChange}
+                placeholder="Kurzer, prägnanter Slogan"
+              />
+            </div>
+
+            {/* Target Audience */}
+            <div className="space-y-2">
+              <Label htmlFor="modal-targetAudience">Zielgruppe</Label>
+              <Textarea
+                id="modal-targetAudience"
+                name="targetAudience"
+                value={modalEditedProject?.targetAudience || ""}
+                onChange={handleModalInputChange}
+                placeholder="Beschreibe deine Zielgruppe"
+                rows={2}
+              />
+            </div>
+
+            {/* Target Audience Groups */}
+            <div className="space-y-2">
+              <Label htmlFor="modal-targetAudienceGroups">
+                Zielgruppen-Klassifikation
+              </Label>
+              <MultiSelect
+                options={[
+                  { value: "Kinder", label: "Kinder" },
+                  { value: "Jugendliche", label: "Jugendliche" },
+                  { value: "Junge Erwachsene", label: "Junge Erwachsene" },
+                  { value: "Erwachsene", label: "Erwachsene" },
+                  { value: "Senioren", label: "Senioren" },
+                  { value: "Frauen", label: "Frauen" },
+                  { value: "Männer", label: "Männer" },
+                  { value: "Akademiker", label: "Akademiker" },
+                  { value: "Fachpublikum", label: "Fachpublikum" },
+                  { value: "Hobbyisten", label: "Hobbyisten" },
+                  { value: "Anfänger", label: "Anfänger" },
+                  { value: "Fortgeschrittene", label: "Fortgeschrittene" },
+                  { value: "Experten", label: "Experten" },
+                ]}
+                selected={
+                  Array.isArray(modalEditedProject?.targetAudienceGroups)
+                    ? modalEditedProject.targetAudienceGroups
+                    : []
+                }
+                onChange={(values) =>
+                  handleModalSelectChange("targetAudienceGroups", values)
+                }
+                placeholder="Zielgruppen auswählen"
+              />
+            </div>
+
+            {/* Selling Points */}
+            <div className="space-y-2">
+              <Label htmlFor="modal-sellingPoints">Kaufargumente</Label>
+              <Textarea
+                id="modal-sellingPoints"
+                name="sellingPoints"
+                value={modalEditedProject?.sellingPoints || ""}
+                onChange={handleModalInputChange}
+                placeholder="Stichpunktartige Kaufargumente (z.B. 'Praxisnah, Leicht verständlich, Umfassend')"
+                rows={2}
+              />
+            </div>
+
+            {/* Keywords */}
+            <div className="space-y-2">
+              <Label htmlFor="modal-keywords">Suchbegriffe</Label>
+              <Textarea
+                id="modal-keywords"
+                name="keywords"
+                value={modalEditedProject?.keywords || ""}
+                onChange={handleModalInputChange}
+                placeholder="Suchbegriffe, durch Kommas getrennt"
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleModalCancel}>
+              <XIcon className="h-4 w-4 mr-2" />
+              Abbrechen
+            </Button>
+            <Button onClick={handleModalSave}>
+              <SaveIcon className="h-4 w-4 mr-2" />
+              Speichern
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Author, Series, and Publisher Information Card */}
+      <Card className="mb-6 mt-8 shadow-sm rounded-xl border-gray-200">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center justify-between text-xl font-bold text-gray-900">
+            <div className="flex items-center">
+              <UsersIcon className="h-6 w-6 mr-3 text-blue-600" />
+              Urheber & Verlagsdaten
+            </div>
+            <div className="flex gap-2">
+              {authorCardState.isEditing ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleAuthorCardCancel}
+                    size="sm"
+                  >
+                    <XIcon className="h-4 w-4 mr-2" />
+                    Abbrechen
+                  </Button>
+                  <Button onClick={handleAuthorCardSave} size="sm">
+                    <SaveIcon className="h-4 w-4 mr-2" />
+                    Speichern
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={handleAuthorCardEdit}
+                  size="sm"
+                >
+                  <EditIcon className="h-4 w-4 mr-2" />
+                  Bearbeiten
+                </Button>
+              )}
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-2">
+          {/* Central Management Notice - Only shown in editing mode */}
+          {authorCardState.isEditing && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <InfoIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h5 className="font-medium text-blue-900 mb-2">
+                    Zentral verwaltete Daten
+                  </h5>
+                  <p className="text-sm text-blue-800 mb-3">
+                    Diese Daten werden zentral verwaltet und können in mehreren
+                    Projekten verwendet werden. Änderungen wirken sich auf alle
+                    zugeordneten Projekte aus. Die Bearbeitung bestehender Daten
+                    nimmst du daher in diesen Bereichen vor:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Link
+                      to="/buchmanagement?tab=authors"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 underline decoration-2 hover:decoration-4 transition-all"
+                    >
+                      Urheber verwalten
+                      <ExternalLinkIcon className="h-3 w-3" />
+                    </Link>
+                    <Link
+                      to="/buchmanagement?tab=series"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 underline decoration-2 hover:decoration-4 transition-all"
+                    >
+                      Buchreihen verwalten
+                      <ExternalLinkIcon className="h-3 w-3" />
+                    </Link>
+                    <Link
+                      to="/buchmanagement?tab=verlagsmarken"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 underline decoration-2 hover:decoration-4 transition-all"
+                    >
+                      Verlagsmarken verwalten
+                      <ExternalLinkIcon className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-6">
+            {/* Authors */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-base text-gray-800">
+                  Urheber
+                </h4>
+                {authorCardState.isEditing && (
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsAuthorSelectionOpen(true)}
+                    >
+                      <SearchIcon className="h-4 w-4 mr-1" />
+                      Urheber auswählen
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsNewAuthorDialogOpenLocal(true)}
+                    >
+                      <PlusCircleIcon className="h-4 w-4 mr-1" />
+                      Neu anlegen
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {localAuthors && localAuthors.length > 0 ? (
+                authorCardState.isEditing ? (
+                  <DraggableAuthorList
+                    authors={localAuthors}
+                    onOrderChange={(reorderedAuthors) => {
+                      setLocalAuthors(reorderedAuthors);
+                      console.log("New author order:", reorderedAuthors);
+                    }}
+                    onRemove={(authorId) => {
+                      if (authorCardState.isEditing) {
+                        handleRemoveAuthorFromProject?.(authorId);
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="space-y-3">
+                    {localAuthors.map((author) => (
+                      <div
+                        key={author.id}
+                        className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-gray-900">
+                              {author.authors.author_type === "person"
+                                ? `${author.authors.first_name} ${author.authors.last_name}`
+                                : author.authors.company_name}
+                            </span>
+                            {author.author_role &&
+                              author.author_role !== "Autor" && (
+                                <Badge variant="outline" className="text-xs">
+                                  {author.author_role}
+                                </Badge>
+                              )}
+                          </div>
+                          {author.author_biographies?.biography_text &&
+                          author.author_biographies.biography_text !==
+                            "Keine Biografie vorhanden." ? (
+                            <div className="mt-2">
+                              <p className="text-sm text-gray-600 leading-relaxed">
+                                {author.author_biographies.biography_text}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500 italic mt-1">
+                              Keine Biografie zugeordnet
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400 italic">
+                    Keine Urheber zugewiesen
+                  </p>
+
+                  {/* Display newly selected authors */}
+                  {selectedProjectData.selectedAuthors &&
+                    selectedProjectData.selectedAuthors.length > 0 && (
+                      <div className="space-y-2">
+                        <h5 className="text-sm font-medium text-blue-700">
+                          Neu ausgewählte Urheber:
+                        </h5>
+                        {selectedProjectData.selectedAuthors.map(
+                          (selectedAuthor, index) => (
+                            <div
+                              key={index}
+                              className="border-l-4 border-blue-200 pl-4 p-3 rounded-lg bg-blue-50"
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <UserIcon className="h-4 w-4 text-blue-600" />
+                                  <span className="text-sm font-medium text-blue-900">
+                                    {selectedAuthor.author.author_type ===
+                                    "person"
+                                      ? `${selectedAuthor.author.first_name} ${selectedAuthor.author.last_name}`
+                                      : selectedAuthor.author.company_name}
+                                    {selectedAuthor.role &&
+                                      selectedAuthor.role !== "Autor" && (
+                                        <span className="text-blue-700 ml-1 font-normal">
+                                          ({selectedAuthor.role})
+                                        </span>
+                                      )}
+                                  </span>
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-xs bg-blue-100 text-blue-800"
+                                  >
+                                    Neu ausgewählt
+                                  </Badge>
+                                </div>
+                              </div>
+                              {selectedAuthor.biography &&
+                                selectedAuthor.biography.biography_text && (
+                                  <div className="ml-6">
+                                    <p className="text-xs font-medium text-blue-800 mb-1">
+                                      {selectedAuthor.biography.biography_label}
+                                    </p>
+                                    <p className="text-xs text-blue-700 leading-relaxed">
+                                      {selectedAuthor.biography.biography_text}
+                                    </p>
+                                  </div>
+                                )}
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    )}
+                </div>
+              )}
+            </div>
+
+            {/* Series */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-base text-gray-800">
+                  Buchreihe (optional)
+                </h4>
+                {authorCardState.isEditing && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsSeriesSelectionOpen(true)}
+                    >
+                      <SearchIcon className="h-4 w-4 mr-1" />
+                      Buchreihe auswählen
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => console.log("Create new series")}
+                    >
+                      <PlusCircleIcon className="h-4 w-4 mr-1" />
+                      Neu anlegen
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {selectedProjectData.selectedSeries ? (
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-gray-900">
+                        {selectedProjectData.selectedSeries.name}
+                      </span>
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-blue-100 text-blue-800"
+                      >
+                        Neu ausgewählt
+                      </Badge>
+                    </div>
+                    {selectedProjectData.selectedSeries.description && (
+                      <p className="text-sm text-gray-600 leading-relaxed mt-1">
+                        {selectedProjectData.selectedSeries.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : project.series ? (
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex-1">
+                    <span className="font-medium text-gray-900">
+                      {project.series}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 italic">
+                  Keine Buchreihe zugewiesen
+                </p>
+              )}
+            </div>
+
+            {/* Publisher */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-base text-gray-800">
+                  Verlagsmarke (optional)
+                </h4>
+                {authorCardState.isEditing && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsPublisherSelectionOpen(true)}
+                    >
+                      <SearchIcon className="h-4 w-4 mr-1" />
+                      Verlagsmarke auswählen
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => console.log("Create new publisher")}
+                    >
+                      <PlusCircleIcon className="h-4 w-4 mr-1" />
+                      Neu anlegen
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {selectedProjectData.selectedPublisher ? (
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-gray-900">
+                        {selectedProjectData.selectedPublisher.name}
+                      </span>
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-blue-100 text-blue-800"
+                      >
+                        Neu ausgewählt
+                      </Badge>
+                    </div>
+                    {selectedProjectData.selectedPublisher.description && (
+                      <p className="text-sm text-gray-600 leading-relaxed mt-1">
+                        {selectedProjectData.selectedPublisher.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : project.publisher ? (
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex-1">
+                    <span className="font-medium text-gray-900">
+                      {project.publisher}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 italic">
+                  Keine Verlagsmarke zugewiesen
+                </p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Author Dialogs */}
+      <AddAuthorDialog
+        isOpen={isAuthorDialogOpen}
+        onOpenChange={setIsAuthorDialogOpenLocal}
+        authors={allAuthors}
+        selectedAuthor={selectedAuthor}
+        selectedAuthorRole={selectedAuthorRole}
+        selectedBiography={selectedBiography}
+        authorBiographies={authorBiographies}
+        handleAuthorChange={handleAuthorChange || (() => {})}
+        setSelectedAuthorRole={setSelectedAuthorRole || (() => {})}
+        setSelectedBiography={setSelectedBiography || (() => {})}
+        handleAddAuthorToProject={handleAddAuthorToProject || (() => {})}
+        projectLanguages={project?.languages || []}
+      />
+
+      <NewAuthorDialog
+        isOpen={isNewAuthorDialogOpen}
+        onOpenChange={setIsNewAuthorDialogOpenLocal}
+        onAuthorCreated={handleAuthorCreated || (() => {})}
+      />
+
+      {/* Series Selection Dialog */}
+      <Dialog
+        open={isSeriesSelectionOpen}
+        onOpenChange={setIsSeriesSelectionOpen}
+      >
+        <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Buchreihe auswählen</DialogTitle>
+            <DialogDescription>
+              Wähle eine bestehende Buchreihe aus der Liste aus.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="series-select">Buchreihe</Label>
+              <Select
+                value={selectedSeriesId}
+                onValueChange={setSelectedSeriesId}
+              >
+                <SelectTrigger id="series-select">
+                  <SelectValue placeholder="Buchreihe auswählen" />
+                </SelectTrigger>
+                <SelectContent
+                  className="max-h-[200px] overflow-y-auto"
+                  position="popper"
+                  sideOffset={5}
+                >
+                  {mockSeries.map((series) => (
+                    <SelectItem key={series.id} value={series.id}>
+                      <span className="font-medium">{series.name}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsSeriesSelectionOpen(false);
+                setSelectedSeriesId("");
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleSeriesSelection}
+              disabled={!selectedSeriesId}
+            >
+              Auswählen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Publisher Selection Dialog */}
+      <Dialog
+        open={isPublisherSelectionOpen}
+        onOpenChange={setIsPublisherSelectionOpen}
+      >
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Verlagsmarke auswählen</DialogTitle>
+            <DialogDescription>
+              Wähle eine bestehende Verlagsmarke aus der Liste aus.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="publisher-select">Verlagsmarke</Label>
+              <Select
+                value={selectedPublisherId}
+                onValueChange={setSelectedPublisherId}
+              >
+                <SelectTrigger id="publisher-select">
+                  <SelectValue placeholder="Verlagsmarke auswählen" />
+                </SelectTrigger>
+                <SelectContent
+                  className="max-h-[200px] overflow-y-auto"
+                  position="popper"
+                  sideOffset={5}
+                >
+                  {mockVerlagsmarken.map((publisher) => (
+                    <SelectItem key={publisher.id} value={publisher.id}>
+                      <div className="flex flex-col max-w-[400px]">
+                        <span className="font-medium truncate">
+                          {publisher.name}
+                        </span>
+                        <span className="text-sm text-muted-foreground truncate">
+                          {publisher.description}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Display selected publisher */}
+              {selectedPublisherId && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                  <h5 className="font-medium text-sm text-gray-900 mb-2">
+                    Ausgewählte Verlagsmarke:
+                  </h5>
+                  <div className="text-left">
+                    <p className="font-medium text-sm mb-1">
+                      {
+                        mockVerlagsmarken.find(
+                          (p) => p.id === selectedPublisherId,
+                        )?.name
+                      }
+                    </p>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      {
+                        mockVerlagsmarken.find(
+                          (p) => p.id === selectedPublisherId,
+                        )?.description
+                      }
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsPublisherSelectionOpen(false);
+                setSelectedPublisherId("");
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handlePublisherSelection}
+              disabled={!selectedPublisherId}
+            >
+              Auswählen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Author Selection Dialog */}
+      <Dialog
+        open={isAuthorSelectionOpen}
+        onOpenChange={setIsAuthorSelectionOpen}
+      >
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Urheber auswählen</DialogTitle>
+            <DialogDescription>
+              Wähle einen bestehenden Urheber und eine passende Biografie aus.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="author-select">Urheber</Label>
+              <Select
+                value={selectedAuthorId}
+                onValueChange={setSelectedAuthorId}
+              >
+                <SelectTrigger id="author-select">
+                  <SelectValue placeholder="Urheber auswählen" />
+                </SelectTrigger>
+                <SelectContent
+                  className="max-h-[200px] overflow-y-auto"
+                  position="popper"
+                  sideOffset={5}
+                >
+                  {mockAuthors.map((author) => (
+                    <SelectItem key={author.id} value={author.id}>
+                      <div className="flex flex-col max-w-[500px]">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium truncate">
+                            {author.author_type === "person"
+                              ? `${author.first_name} ${author.last_name}`
+                              : author.company_name}
+                          </span>
+                          {author.is_pseudonym && (
+                            <Badge
+                              variant="secondary"
+                              className="text-xs flex-shrink-0"
+                            >
+                              Pseudonym
+                            </Badge>
+                          )}
+                        </div>
+                        {author.profession && (
+                          <span className="text-sm text-muted-foreground truncate">
+                            {author.profession}
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedAuthorId && (
+              <div className="space-y-2">
+                <Label htmlFor="biography-select">
+                  Biografie (Sprache: {projectLanguage.toUpperCase()})
+                </Label>
+                <Select
+                  value={selectedBiographyId}
+                  onValueChange={setSelectedBiographyId}
+                >
+                  <SelectTrigger id="biography-select">
+                    <SelectValue placeholder="Biografie auswählen" />
+                  </SelectTrigger>
+                  <SelectContent
+                    className="max-h-[200px] overflow-y-auto"
+                    position="popper"
+                    sideOffset={5}
+                  >
+                    {availableBiographies.length > 0 ? (
+                      availableBiographies.map((biography) => (
+                        <SelectItem key={biography.id} value={biography.id}>
+                          <div className="flex flex-col max-w-[500px]">
+                            <span className="font-medium truncate">
+                              {biography.biography_label}
+                            </span>
+                            <span className="text-sm text-muted-foreground line-clamp-2">
+                              {biography.biography_text.substring(0, 100)}...
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-biography" disabled>
+                        Keine Biografie in Projektsprache (
+                        {projectLanguage.toUpperCase()}) verfügbar
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+
+                {/* Display selected biography */}
+                {selectedBiographyId && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                    <h5 className="font-medium text-sm text-gray-900 mb-2">
+                      Ausgewählte Biografie:
+                    </h5>
+                    <div className="text-left">
+                      <p className="font-medium text-sm mb-1">
+                        {
+                          availableBiographies.find(
+                            (b) => b.id === selectedBiographyId,
+                          )?.biography_label
+                        }
+                      </p>
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        {
+                          availableBiographies.find(
+                            (b) => b.id === selectedBiographyId,
+                          )?.biography_text
+                        }
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="role-select">Rolle</Label>
+              <Select
+                value={selectedAuthorRoleLocal}
+                onValueChange={setSelectedAuthorRoleLocal}
+              >
+                <SelectTrigger id="role-select">
+                  <SelectValue placeholder="Rolle auswählen" />
+                </SelectTrigger>
+                <SelectContent
+                  className="max-h-[200px] overflow-y-auto"
+                  position="popper"
+                  sideOffset={5}
+                >
+                  <SelectItem value="Autor">Autor</SelectItem>
+                  <SelectItem value="Co-Autor">Co-Autor</SelectItem>
+                  <SelectItem value="Herausgeber">Herausgeber</SelectItem>
+                  <SelectItem value="Übersetzer">Übersetzer</SelectItem>
+                  <SelectItem value="Illustrator">Illustrator</SelectItem>
+                  <SelectItem value="Lektor">Lektor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAuthorSelectionOpen(false);
+                setSelectedAuthorId("");
+                setSelectedBiographyId("");
+                setSelectedAuthorRoleLocal("Autor");
+              }}
+            >
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleAuthorSelection}
+              disabled={!selectedAuthorId || !selectedBiographyId}
+            >
+              Hinzufügen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+export default ProjectDetails;
