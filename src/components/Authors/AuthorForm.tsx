@@ -98,6 +98,7 @@ interface AuthorFormProps {
   initialData?: AuthorFormValues;
   onCancel?: () => void;
   isEmbedded?: boolean;
+  showSubmitButton?: boolean;
 }
 
 const defaultValues: Partial<AuthorFormValues> = {
@@ -127,6 +128,7 @@ export function AuthorForm({
   initialData,
   onCancel,
   isEmbedded = false,
+  showSubmitButton = true,
 }: AuthorFormProps) {
   const form = useForm<AuthorFormValues>({
     resolver: zodResolver(createAuthorSchema(isEmbedded)),
@@ -157,7 +159,11 @@ export function AuthorForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form
+        id="author-form"
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-6"
+      >
         <FormField
           control={form.control}
           name="authorType"
@@ -573,15 +579,17 @@ export function AuthorForm({
           </div>
         )}
 
-        <div className="flex gap-2">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              <X className="h-4 w-4 mr-2" />
-              Abbrechen
-            </Button>
-          )}
-          <Button type="submit">Speichern</Button>
-        </div>
+        {showSubmitButton && (
+          <div className="flex gap-2">
+            {onCancel && (
+              <Button type="button" variant="outline" onClick={onCancel}>
+                <X className="h-4 w-4 mr-2" />
+                Abbrechen
+              </Button>
+            )}
+            <Button type="submit">Speichern</Button>
+          </div>
+        )}
       </form>
     </Form>
   );

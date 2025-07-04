@@ -2,6 +2,7 @@
 export interface MockSeries {
   id: string;
   name: string;
+  description?: string;
   project_count?: number;
   created_at: string;
   updated_at: string;
@@ -9,23 +10,26 @@ export interface MockSeries {
 
 export const mockSeries: MockSeries[] = [
   {
-    id: "mock-series-1",
-    name: "Fantasy-Saga",
-    project_count: 3,
+    id: "series-1",
+    name: "Self-Publishing Ratgeber",
+    description: "Umfassende Ratgeber-Serie für Self-Publisher und Autoren",
+    project_count: 2,
     created_at: "2024-01-15T10:00:00Z",
     updated_at: "2024-01-15T10:00:00Z",
   },
   {
-    id: "mock-series-2",
-    name: "Krimi-Reihe",
-    project_count: 5,
+    id: "series-2",
+    name: "Kreatives Schreiben Kompakt",
+    description: "Praktische Anleitungen für kreatives Schreiben",
+    project_count: 2,
     created_at: "2024-01-16T09:30:00Z",
     updated_at: "2024-01-16T09:30:00Z",
   },
   {
-    id: "mock-series-3",
-    name: "Ratgeber-Serie",
-    project_count: 2,
+    id: "series-3",
+    name: "Business Essentials",
+    description: "Grundlagen für Kleinunternehmer und Startups",
+    project_count: 0,
     created_at: "2024-01-17T14:00:00Z",
     updated_at: "2024-01-17T14:00:00Z",
   },

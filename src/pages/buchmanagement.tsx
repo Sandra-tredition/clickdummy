@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BookOpen, Users, Library, Building } from "lucide-react";
@@ -13,12 +13,35 @@ const Buchmanagement = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>(() => {
     // Get tab from URL hash or default to "projects"
-    const hash = location.hash.replace("#", "");
+    const hash = location.hash.replace("#", "").split("&")[0]; // Extract tab name before any parameters
     if (["projects", "authors", "series", "verlagsmarken"].includes(hash)) {
       return hash;
     }
     return "projects";
   });
+
+  // Listen for hash changes and update active tab
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace("#", "").split("&")[0];
+      if (["projects", "authors", "series", "verlagsmarken"].includes(hash)) {
+        setActiveTab(hash);
+      }
+    };
+
+    // Listen for hash changes
+    window.addEventListener("hashchange", handleHashChange);
+
+    // Also check on location change (for programmatic navigation)
+    const hash = location.hash.replace("#", "").split("&")[0];
+    if (["projects", "authors", "series", "verlagsmarken"].includes(hash)) {
+      setActiveTab(hash);
+    }
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange);
+    };
+  }, [location.hash]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);

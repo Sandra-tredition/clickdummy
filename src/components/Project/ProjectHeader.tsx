@@ -119,18 +119,6 @@ const ProjectHeader: React.FC<ProjectHeaderProps> = ({
       <div className="p-8">
         <div className="flex flex-col md:flex-row justify-between items-start gap-4">
           <div className="flex-1">
-            {/* Authors Section - Moved above title */}
-            {projectAuthors &&
-              Array.isArray(projectAuthors) &&
-              projectAuthors.length > 0 && <></>}
-            {(!projectAuthors ||
-              !Array.isArray(projectAuthors) ||
-              projectAuthors.length === 0) && (
-              <div className="text-gray-400 mb-3">
-                <span className="text-sm">Keine Autoren zugewiesen</span>
-              </div>
-            )}
-
             <div className="mb-3">
               <div className="flex items-start gap-3 flex-wrap">
                 <h1 className="text-4xl font-bold text-gray-900 leading-tight">

@@ -1,3 +1,0 @@
--- This file is intentionally empty.
--- The projects table creation has been moved to the previous migration file
--- to ensure proper order of table creation.

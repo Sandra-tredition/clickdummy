@@ -17,6 +17,9 @@ import {
   PlusCircle,
   User,
   FileText,
+  AlertTriangle,
+  Info,
+  Plus,
 } from "lucide-react";
 import {
   getBiographiesForAuthor,
@@ -64,6 +67,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export type ProjectAssignment = {
   projectId: string;
@@ -743,6 +747,23 @@ export function AuthorList({
               Bearbeite die Grunddaten des Urhebers.
             </DialogDescription>
           </DialogHeader>
+
+          {/* Impact Warning */}
+          {editingBasicData &&
+            editingBasicData.projects &&
+            editingBasicData.projects.length > 0 && (
+              <Alert className="mb-4 border-amber-200 bg-amber-50">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800">
+                  <strong>Wichtiger Hinweis:</strong> Änderungen an den
+                  Grunddaten wirken sich auf alle{" "}
+                  {editingBasicData.projects.length} Projekte aus, in denen
+                  dieser Urheber verwendet wird. Die Änderungen werden
+                  automatisch in allen zugeordneten Projekten übernommen.
+                </AlertDescription>
+              </Alert>
+            )}
+
           {editingBasicData && (
             <BasicDataForm
               author={editingBasicData}
@@ -765,6 +786,22 @@ export function AuthorList({
               Bearbeite die Biografien des Urhebers.
             </DialogDescription>
           </DialogHeader>
+
+          {/* Biography Impact Info */}
+          {editingBiographies &&
+            editingBiographies.projects &&
+            editingBiographies.projects.length > 0 && (
+              <Alert className="mb-4 border-blue-200 bg-blue-50">
+                <Info className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  <strong>Hinweis zu Biografien:</strong> Änderungen an
+                  Biografien wirken sich nur auf Projekte aus, die diese
+                  spezifische Biografie verwenden. Neue Biografien stehen
+                  automatisch für alle Projekte zur Verfügung.
+                </AlertDescription>
+              </Alert>
+            )}
+
           {editingBiographies && (
             <BiographiesForm
               author={editingBiographies}
@@ -1161,43 +1198,55 @@ const BiographiesForm = ({
     biographies[0]?.biography_label || "0",
   );
 
-  const form = useForm<BiographyFormValues>({
-    resolver: zodResolver(biographySchema),
-    defaultValues: {
-      text:
-        editingBiographyIndex !== null
-          ? biographies[editingBiographyIndex]?.biography_text || ""
-          : "",
-      label:
-        editingBiographyIndex !== null
-          ? biographies[editingBiographyIndex]?.biography_label || "Standard"
-          : "Standard",
-      language:
-        editingBiographyIndex !== null
-          ? biographies[editingBiographyIndex]?.language || "Deutsch"
-          : "Deutsch",
-    },
-  });
-
-  // Reset form when editing index changes
-  React.useEffect(() => {
+  // Get initial form values based on editing state
+  const getInitialValues = React.useMemo(() => {
     if (isAddingBiography) {
-      form.reset({
+      return {
         text: "",
         label: "Standard",
         language: "Deutsch",
-      });
-    } else if (editingBiographyIndex !== null) {
+      };
+    } else if (editingBiographyIndex !== null && biographies.length > 0) {
       const bio = biographies[editingBiographyIndex];
       if (bio) {
-        form.reset({
-          text: bio.biography_text,
+        // Map language codes to full language names
+        const languageMapping: { [key: string]: string } = {
+          de: "Deutsch",
+          en: "English",
+          fr: "Français",
+          es: "Español",
+          it: "Italiano",
+          nl: "Nederlands",
+          pl: "Polski",
+          pt: "Português",
+          ru: "Русский",
+          zh: "中文",
+          ja: "日本語",
+        };
+
+        const mappedLanguage =
+          languageMapping[bio.language?.toLowerCase()] ||
+          bio.language ||
+          "Deutsch";
+
+        return {
+          text: bio.biography_text || "",
           label: bio.biography_label || "Standard",
-          language: bio.language || "Deutsch",
-        });
+          language: mappedLanguage,
+        };
       }
     }
-  }, [isAddingBiography, editingBiographyIndex, biographies, form]);
+    return {
+      text: "",
+      label: "Standard",
+      language: "Deutsch",
+    };
+  }, [isAddingBiography, editingBiographyIndex, biographies]);
+
+  const form = useForm<BiographyFormValues>({
+    resolver: zodResolver(biographySchema),
+    values: getInitialValues, // Use 'values' instead of 'defaultValues' for dynamic updates
+  });
 
   const handleFormSubmit = (data: BiographyFormValues) => {
     onSave(data);

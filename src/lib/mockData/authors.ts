@@ -35,9 +35,13 @@ export const mockAuthors: MockAuthor[] = [
     last_name: "Schmidt",
     is_pseudonym: false,
     birth_date: "1975-03-15",
-    profession: "Schriftstellerin",
+    death_date: undefined,
+    isni: "0000 0001 2345 6789",
+    profession: "Schriftstellerin und Schreibcoach",
+    company: "Schmidt Schreibwerkstatt GmbH",
     website: "https://maria-schmidt-autorin.de",
-    additional_info: "Spezialisiert auf Ratgeber und Sachbücher",
+    additional_info:
+      "Spezialisiert auf Ratgeber und Sachbücher. Über 20 veröffentlichte Werke, davon 8 Bestseller. Regelmäßige Auftritte in Literaturmagazinen und Schreibworkshops. Mitglied im Verband deutscher Schriftsteller (VS). Ausgezeichnet mit dem Deutschen Sachbuchpreis 2019.",
     created_at: "2024-01-15T10:00:00Z",
     updated_at: "2024-01-15T10:00:00Z",
   },
@@ -205,6 +209,16 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     language: "de",
     created_at: "2024-01-15T10:05:00Z",
     updated_at: "2024-01-15T10:05:00Z",
+  },
+  {
+    id: "bio-author-1-3",
+    author_id: "author-1",
+    biography_text:
+      "Maria Schmidt is an experienced author and writing coach with over 15 years of experience in the publishing industry. She has published several successful guidebooks and regularly conducts workshops for aspiring authors.",
+    biography_label: "Standard (English)",
+    language: "en",
+    created_at: "2024-01-15T10:10:00Z",
+    updated_at: "2024-01-15T10:10:00Z",
   },
   // Thomas Weber Biographies
   {
@@ -419,60 +433,76 @@ export interface MockProjectAssignmentWithBio {
 }
 
 export const mockProjectAssignments: MockProjectAssignment[] = [
-  // Maria Schmidt assignments - Standard biography gets multiple projects
+  // Assignments for the three main projects (1, 2, 3) that demo@example.com user sees
+
+  // Project 1: "Digitales Publizieren Meistern" - Maria Schmidt (Hauptautor) + Thomas Weber (Co-Autor)
   {
-    id: "assignment-1",
+    id: "assignment-1-1",
     author_id: "author-1",
-    project_id: "project-1",
-    project_title: "Der perfekte Ratgeber",
-    author_role: "Hauptautor",
+    project_id: "1",
+    project_title: "Digitales Publizieren Meistern",
+    author_role: "Autor",
     project_status: "Veröffentlicht",
     created_at: "2024-01-15T10:00:00Z",
   },
   {
-    id: "assignment-2",
-    author_id: "author-1",
-    project_id: "project-2",
-    project_title: "Schreibtipps für Anfänger",
-    author_role: "Hauptautor",
-    project_status: "In Bearbeitung",
-    created_at: "2024-02-01T10:00:00Z",
-  },
-  {
-    id: "assignment-2b",
-    author_id: "author-1",
-    project_id: "project-2b",
-    project_title: "Ratgeber für Fortgeschrittene",
-    author_role: "Hauptautor",
-    project_status: "Geplant",
-    created_at: "2024-03-01T10:00:00Z",
-  },
-  // Thomas Weber assignments - Standard biography gets multiple projects
-  {
-    id: "assignment-3",
+    id: "assignment-1-2",
     author_id: "author-2",
-    project_id: "project-3",
-    project_title: "Lektorat und Verlagsarbeit",
-    author_role: "Hauptautor",
+    project_id: "1",
+    project_title: "Digitales Publizieren Meistern",
+    author_role: "Co-Autor",
     project_status: "Veröffentlicht",
     created_at: "2024-01-16T09:30:00Z",
   },
+
+  // Project 2: "Kreatives Schreiben für Anfänger" - Elena Richter (Hauptautor)
   {
-    id: "assignment-4",
-    author_id: "author-2",
-    project_id: "project-4",
-    project_title: "Buchmarketing Strategien",
-    author_role: "Co-Autor",
-    project_status: "Geplant",
-    created_at: "2024-02-10T09:30:00Z",
+    id: "assignment-2-1",
+    author_id: "author-11",
+    project_id: "2",
+    project_title: "Kreatives Schreiben für Anfänger",
+    author_role: "Autor",
+    project_status: "Veröffentlicht",
+    created_at: "2024-02-05T10:30:00Z",
+  },
+
+  // Project 3: "Marketing für Kleinunternehmen" - Dr. Marcus Bauer (Hauptautor) + Sarah Klein (Illustrator)
+  {
+    id: "assignment-3-1",
+    author_id: "author-12",
+    project_id: "3",
+    project_title: "Marketing für Kleinunternehmen",
+    author_role: "Autor",
+    project_status: "Veröffentlicht",
+    created_at: "2024-02-06T14:15:00Z",
   },
   {
-    id: "assignment-4b",
-    author_id: "author-2",
-    project_id: "project-4c",
-    project_title: "Verlagsmanagement kompakt",
+    id: "assignment-3-2",
+    author_id: "author-6",
+    project_id: "3",
+    project_title: "Marketing für Kleinunternehmen",
+    author_role: "Illustrator",
+    project_status: "Veröffentlicht",
+    created_at: "2024-01-20T13:15:00Z",
+  },
+
+  // Additional assignments for other authors to show in author management
+  {
+    id: "assignment-other-1",
+    author_id: "author-1",
+    project_id: "project-other-1",
+    project_title: "Schreibtipps für Fortgeschrittene",
     author_role: "Hauptautor",
     project_status: "In Bearbeitung",
+    created_at: "2024-03-01T10:00:00Z",
+  },
+  {
+    id: "assignment-other-2",
+    author_id: "author-2",
+    project_id: "project-other-2",
+    project_title: "Verlagsmanagement kompakt",
+    author_role: "Hauptautor",
+    project_status: "Geplant",
     created_at: "2024-02-20T09:30:00Z",
   },
   // Literaturverlag GmbH assignments
@@ -650,66 +680,83 @@ export const mockProjectAssignments: MockProjectAssignment[] = [
 
 // New assignments with biography associations
 export const mockProjectAssignmentsWithBio: MockProjectAssignmentWithBio[] = [
-  // Maria Schmidt - Standard biography gets multiple projects
+  // Assignments for the three main projects (1, 2, 3) that demo@example.com user sees
+
+  // Project 1: "Digitales Publizieren Meistern" - Maria Schmidt (Autor) + Thomas Weber (Co-Autor)
   {
     id: "assignment-bio-1-1",
     author_id: "author-1",
-    project_id: "project-1",
-    project_title: "Der perfekte Ratgeber",
-    author_role: "Hauptautor",
+    project_id: "1",
+    project_title: "Digitales Publizieren Meistern",
+    author_role: "Autor",
     project_status: "Veröffentlicht",
     biography_id: "bio-author-1-1", // Standard biography
     created_at: "2024-01-15T10:00:00Z",
   },
   {
     id: "assignment-bio-1-2",
-    author_id: "author-1",
-    project_id: "project-2",
-    project_title: "Schreibtipps für Anfänger",
-    author_role: "Hauptautor",
-    project_status: "In Bearbeitung",
-    biography_id: "bio-author-1-1", // Same Standard biography
-    created_at: "2024-02-01T10:00:00Z",
-  },
-  {
-    id: "assignment-bio-1-3",
-    author_id: "author-1",
-    project_id: "project-2b",
-    project_title: "Ratgeber für Fortgeschrittene",
-    author_role: "Hauptautor",
-    project_status: "Geplant",
-    biography_id: "bio-author-1-2", // Kurz biography gets different project
-    created_at: "2024-03-01T10:00:00Z",
-  },
-  // Thomas Weber - Standard biography gets multiple projects
-  {
-    id: "assignment-bio-2-1",
     author_id: "author-2",
-    project_id: "project-3",
-    project_title: "Lektorat und Verlagsarbeit",
-    author_role: "Hauptautor",
+    project_id: "1",
+    project_title: "Digitales Publizieren Meistern",
+    author_role: "Co-Autor",
     project_status: "Veröffentlicht",
     biography_id: "bio-author-2-1", // Standard biography
     created_at: "2024-01-16T09:30:00Z",
   },
+
+  // Project 2: "Kreatives Schreiben für Anfänger" - Elena Richter (Autor)
   {
-    id: "assignment-bio-2-2",
-    author_id: "author-2",
-    project_id: "project-4",
-    project_title: "Buchmarketing Strategien",
-    author_role: "Co-Autor",
-    project_status: "Geplant",
-    biography_id: "bio-author-2-1", // Same Standard biography
-    created_at: "2024-02-10T09:30:00Z",
+    id: "assignment-bio-2-1",
+    author_id: "author-11",
+    project_id: "2",
+    project_title: "Kreatives Schreiben für Anfänger",
+    author_role: "Autor",
+    project_status: "Veröffentlicht",
+    biography_id: "bio-author-11-1", // Standard biography
+    created_at: "2024-02-05T10:30:00Z",
+  },
+
+  // Project 3: "Marketing für Kleinunternehmen" - Dr. Marcus Bauer (Autor) + Sarah Klein (Illustrator)
+  {
+    id: "assignment-bio-3-1",
+    author_id: "author-12",
+    project_id: "3",
+    project_title: "Marketing für Kleinunternehmen",
+    author_role: "Autor",
+    project_status: "Veröffentlicht",
+    biography_id: "bio-author-12-1", // Standard biography
+    created_at: "2024-02-06T14:15:00Z",
   },
   {
-    id: "assignment-bio-2-3",
-    author_id: "author-2",
-    project_id: "project-4c",
-    project_title: "Verlagsmanagement kompakt",
+    id: "assignment-bio-3-2",
+    author_id: "author-6",
+    project_id: "3",
+    project_title: "Marketing für Kleinunternehmen",
+    author_role: "Illustrator",
+    project_status: "Veröffentlicht",
+    biography_id: "bio-author-6-1", // Standard biography
+    created_at: "2024-01-20T13:15:00Z",
+  },
+
+  // Additional assignments for other projects to show in author management
+  {
+    id: "assignment-bio-other-1",
+    author_id: "author-1",
+    project_id: "project-other-1",
+    project_title: "Schreibtipps für Fortgeschrittene",
     author_role: "Hauptautor",
     project_status: "In Bearbeitung",
-    biography_id: "bio-author-2-2", // Kurz biography gets different project
+    biography_id: "bio-author-1-2", // Kurz biography
+    created_at: "2024-03-01T10:00:00Z",
+  },
+  {
+    id: "assignment-bio-other-2",
+    author_id: "author-2",
+    project_id: "project-other-2",
+    project_title: "Verlagsmanagement kompakt",
+    author_role: "Hauptautor",
+    project_status: "Geplant",
+    biography_id: "bio-author-2-2", // Wissenschaftlich biography
     created_at: "2024-02-20T09:30:00Z",
   },
   // Anna Müller - Standard biography gets multiple projects

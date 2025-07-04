@@ -16,6 +16,7 @@ interface ProjectCardProps {
   coverImage: string;
   language: string;
   lastEdited: string;
+  editionCount?: number;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onView?: (id: string) => void;
@@ -27,25 +28,13 @@ const ProjectCard = ({
   coverImage = "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=300&q=80",
   language = "Deutsch",
   lastEdited = "2023-04-15",
+  editionCount = 0,
   onEdit,
   onDelete,
   onView,
 }: ProjectCardProps) => {
-  const getLanguageColor = (language: string) => {
-    switch (language.toLowerCase()) {
-      case "deutsch":
-        return "bg-blue-500";
-      case "english":
-        return "bg-green-500";
-      case "français":
-      case "french":
-        return "bg-purple-500";
-      case "español":
-      case "spanish":
-        return "bg-orange-500";
-      default:
-        return "bg-gray-500";
-    }
+  const getEditionCountColor = (count: number) => {
+    return "bg-blue-500";
   };
 
   const handleEdit = () => onEdit && onEdit(id);
@@ -70,17 +59,18 @@ const ProjectCard = ({
           className="w-full h-full object-contain"
         />
         <div className="absolute top-2 right-2">
-          <Badge className={`${getLanguageColor(language)} text-white`}>
-            {language}
+          <Badge className={`${getEditionCountColor(editionCount)} text-white`}>
+            {editionCount} {editionCount === 1 ? "Ausgabe" : "Ausgaben"}
           </Badge>
         </div>
       </div>
 
       <div className="p-4 flex flex-col flex-grow">
         <h3 className="text-base font-semibold line-clamp-2 mb-2">{title}</h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 mb-1">
           Zuletzt bearbeitet: {lastEdited}
         </p>
+        <p className="text-xs text-gray-400 mb-4">Sprache: {language}</p>
 
         <div className="mt-auto flex justify-center items-center">
           <Button

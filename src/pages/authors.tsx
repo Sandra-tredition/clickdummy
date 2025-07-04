@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useLocation } from "react-router-dom";
 
 import { AuthorForm } from "@/components/Authors/AuthorForm";
 import { Button } from "@/components/ui/button";
@@ -164,6 +165,7 @@ const languageOptions = [
 ];
 
 const Authors = ({ isEmbedded = false }: AuthorsProps = {}) => {
+  const location = useLocation();
   const [authors, setAuthors] = useState<Author[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingAuthor, setIsCreatingAuthor] = useState(false);
@@ -278,6 +280,24 @@ const Authors = ({ isEmbedded = false }: AuthorsProps = {}) => {
   useEffect(() => {
     fetchAuthors();
   }, []);
+
+  // Handle URL parameters for author selection
+  useEffect(() => {
+    const hash = location.hash.replace("#", "");
+    const params = new URLSearchParams(
+      hash.includes("&") ? hash.split("&").slice(1).join("&") : "",
+    );
+    const authorId = params.get("authorId");
+
+    if (authorId && authors.length > 0) {
+      const targetAuthor = authors.find((author) => author.id === authorId);
+      if (targetAuthor) {
+        setSelectedAuthor(targetAuthor);
+        // Automatically start editing the author
+        handleStartEdit(targetAuthor);
+      }
+    }
+  }, [location.hash, authors]);
 
   const handleCreateAuthor = async (data: any) => {
     try {

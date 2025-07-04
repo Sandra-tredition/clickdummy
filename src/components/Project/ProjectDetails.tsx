@@ -22,6 +22,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   CheckIcon,
   UsersIcon,
   BookOpenIcon,
@@ -76,7 +82,7 @@ interface ProjectDetailsProps {
   setIsNewAuthorDialogOpen?: (isOpen: boolean) => void;
   setIsNewSeriesDialogOpen?: (isOpen: boolean) => void;
   handleEditToggle?: () => void;
-  allAuthors?: any[];
+
   authorBiographies?: any[];
   selectedAuthor?: string;
   selectedAuthorRole?: string;
@@ -86,6 +92,9 @@ interface ProjectDetailsProps {
   setSelectedBiography?: (biographyId: string) => void;
   handleAddAuthorToProject?: () => void;
   handleAuthorCreated?: (authorData: any) => void;
+
+  openAccordion?: string;
+  setOpenAccordion?: (value: string) => void;
 }
 
 interface AuthorCardEditingState {
@@ -113,7 +122,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   setIsNewAuthorDialogOpen,
   setIsNewSeriesDialogOpen,
   handleEditToggle,
-  allAuthors = [],
+
   authorBiographies = [],
   selectedAuthor = "",
   selectedAuthorRole = "Autor",
@@ -123,6 +132,9 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   setSelectedBiography,
   handleAddAuthorToProject,
   handleAuthorCreated,
+
+  openAccordion = "",
+  setOpenAccordion,
 }) => {
   const currentProject = isEditing ? editedProject : project;
   const [isEditModalOpen, setIsEditModalOpen] = React.useState(false);
@@ -173,13 +185,96 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   const availableBiographies = React.useMemo(() => {
     if (!selectedAuthorId) return [];
     const biographies = getBiographiesForAuthor(selectedAuthorId);
-    return biographies.filter((bio) => bio.language === projectLanguage);
+    // Filter biographies by project language (handle both language codes and full names)
+    return biographies.filter((bio) => {
+      const bioLang = bio.language?.toLowerCase();
+      const projLang = projectLanguage?.toLowerCase();
+
+      // Direct match
+      if (bioLang === projLang) return true;
+
+      // Language code to full name mapping
+      const languageMapping: { [key: string]: string } = {
+        de: "deutsch",
+        en: "english",
+        fr: "français",
+        es: "español",
+        it: "italiano",
+        nl: "nederlands",
+        pl: "polski",
+        pt: "português",
+        ru: "русский",
+        zh: "中文",
+        ja: "日本語",
+      };
+
+      // Check if project language code matches biography language name
+      if (languageMapping[projLang] === bioLang) return true;
+
+      // Check if biography language code matches project language name
+      if (languageMapping[bioLang] === projLang) return true;
+
+      return false;
+    });
   }, [selectedAuthorId, projectLanguage]);
 
   // Update local authors when projectAuthors changes
   React.useEffect(() => {
     setLocalAuthors(projectAuthors);
   }, [projectAuthors]);
+
+  // Track processed authors to prevent duplicates
+  const [processedAuthorIds, setProcessedAuthorIds] = React.useState<
+    Set<string>
+  >(new Set());
+
+  // Update local authors when selectedProjectData.selectedAuthors changes
+  React.useEffect(() => {
+    if (
+      selectedProjectData.selectedAuthors &&
+      selectedProjectData.selectedAuthors.length > 0
+    ) {
+      // Filter out already processed authors to prevent duplicates
+      const newAuthors = selectedProjectData.selectedAuthors.filter(
+        (selectedAuthor) => {
+          const authorKey = `${selectedAuthor.author.id}-${selectedAuthor.role}`;
+          return !processedAuthorIds.has(authorKey);
+        },
+      );
+
+      if (newAuthors.length > 0) {
+        // Convert selectedAuthors to the format expected by localAuthors
+        const convertedAuthors = newAuthors.map((selectedAuthor, index) => ({
+          id: `temp-${Date.now()}-${index}`,
+          project_id: project.id,
+          author_id: selectedAuthor.author.id,
+          author_role: selectedAuthor.role,
+          biography_id: selectedAuthor.biography?.id || null,
+          display_order: localAuthors.length + index,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          authors: selectedAuthor.author,
+          author_biographies: selectedAuthor.biography || null,
+        }));
+
+        // Add the converted authors to the existing localAuthors
+        setLocalAuthors((prev) => [...prev, ...convertedAuthors]);
+
+        // Mark these authors as processed
+        const newProcessedIds = new Set(processedAuthorIds);
+        newAuthors.forEach((selectedAuthor) => {
+          const authorKey = `${selectedAuthor.author.id}-${selectedAuthor.role}`;
+          newProcessedIds.add(authorKey);
+        });
+        setProcessedAuthorIds(newProcessedIds);
+      }
+    }
+  }, [
+    selectedProjectData.selectedAuthors,
+    project.id,
+    localAuthors.length,
+    processedAuthorIds,
+  ]);
 
   // Load selected data from localStorage on component mount
   React.useEffect(() => {
@@ -200,6 +295,9 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
 
     loadSelectedData();
   }, [project.id]);
+
+  // Initialize allAuthors state with mockAuthors
+  const [allAuthors, setAllAuthors] = React.useState(mockAuthors);
 
   const handleDragEnd = (result: any) => {
     setIsDragging(false);
@@ -316,55 +414,86 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   };
 
   const handleAuthorSelection = () => {
-    if (selectedAuthorId && selectedBiographyId) {
-      const selectedAuthor = mockAuthors.find((a) => a.id === selectedAuthorId);
-      const selectedBiography = availableBiographies.find(
-        (b) => b.id === selectedBiographyId,
-      );
-      console.log(
-        "Selected author:",
-        selectedAuthor,
-        "with biography:",
-        selectedBiography,
-        "and role:",
-        selectedAuthorRoleLocal,
-      );
+    console.log("handleAuthorSelection called with:", {
+      selectedAuthorId,
+      selectedAuthorRoleLocal,
+      selectedBiographyId,
+    });
 
-      // Store in localStorage
-      const projectData = JSON.parse(
-        localStorage.getItem(`project_${project.id}`) || "{}",
-      );
-      if (!projectData.selectedAuthors) {
-        projectData.selectedAuthors = [];
-      }
-      projectData.selectedAuthors.push({
-        author: selectedAuthor,
-        biography: selectedBiography,
-        role: selectedAuthorRoleLocal,
-      });
-      localStorage.setItem(
-        `project_${project.id}`,
-        JSON.stringify(projectData),
-      );
-
-      setIsAuthorSelectionOpen(false);
-      setSelectedAuthorId("");
-      setSelectedBiographyId("");
-      setSelectedAuthorRoleLocal("Autor");
-
-      // Update local state to reflect the change immediately
-      setSelectedProjectData((prev) => ({
-        ...prev,
-        selectedAuthors: [
-          ...(prev.selectedAuthors || []),
-          {
-            author: selectedAuthor,
-            biography: selectedBiography,
-            role: selectedAuthorRoleLocal,
-          },
-        ],
-      }));
+    if (!selectedAuthorId) {
+      console.log("No author selected");
+      return false;
     }
+
+    const selectedAuthor = mockAuthors.find((a) => a.id === selectedAuthorId);
+    if (!selectedAuthor) {
+      console.log("Selected author not found in mockAuthors");
+      return false;
+    }
+
+    const selectedBiography = selectedBiographyId
+      ? availableBiographies.find((b) => b.id === selectedBiographyId)
+      : null;
+
+    console.log(
+      "Selected author:",
+      selectedAuthor,
+      "with biography:",
+      selectedBiography,
+      "and role:",
+      selectedAuthorRoleLocal,
+    );
+
+    // Check if this author with this role already exists
+    const existingAuthor = localAuthors.find(
+      (author) =>
+        author.author_id === selectedAuthorId &&
+        author.author_role === selectedAuthorRoleLocal,
+    );
+
+    if (existingAuthor) {
+      console.log("Author with this role already exists in project");
+      alert(
+        "Dieser Urheber ist bereits mit dieser Rolle im Projekt zugeordnet.",
+      );
+      return false;
+    }
+
+    // Create new project author entry in the format expected by the parent component
+    const newProjectAuthor = {
+      id: `pa-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      project_id: project.id,
+      author_id: selectedAuthorId,
+      author_role: selectedAuthorRoleLocal,
+      biography_id: selectedBiographyId || null,
+      display_order: localAuthors.length,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      authors: selectedAuthor,
+      author_biographies: selectedBiography || null,
+    };
+
+    console.log("Adding new project author:", newProjectAuthor);
+
+    // Add to local authors immediately for UI update
+    setLocalAuthors((prev) => {
+      const updated = [...prev, newProjectAuthor];
+      console.log("Updated localAuthors:", updated);
+      return updated;
+    });
+
+    // Mark this author as processed to prevent duplicates
+    const authorKey = `${selectedAuthorId}-${selectedAuthorRoleLocal}`;
+    setProcessedAuthorIds((prev) => new Set([...prev, authorKey]));
+
+    console.log("Author successfully added to project:", newProjectAuthor);
+
+    // Reset state but don't close dialog here - let onConfirm handle it
+    setSelectedAuthorId("");
+    setSelectedBiographyId("");
+    setSelectedAuthorRoleLocal("Autor");
+
+    return true; // Indicate success
   };
 
   // Reset biography selection when author changes
@@ -407,6 +536,62 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
     setIsEditModalOpen(true);
   };
 
+  const handleLocalAuthorCreated = (authorData: any, role?: string) => {
+    console.log("New author created:", authorData, "with role:", role);
+
+    // Check if this author with this role already exists to prevent duplicates
+    const authorRole = role || "Autor";
+    const existingAuthor = localAuthors.find(
+      (author) =>
+        author.author_id === authorData.author.id &&
+        author.author_role === authorRole,
+    );
+
+    if (existingAuthor) {
+      console.log(
+        "Author with this role already exists, skipping duplicate creation",
+      );
+      return;
+    }
+
+    // Add the new author to the allAuthors list
+    setAllAuthors((prev) => {
+      // Check if author already exists in allAuthors to prevent duplicates
+      const authorExists = prev.some(
+        (author) => author.id === authorData.author.id,
+      );
+      if (authorExists) {
+        return prev;
+      }
+      return [...prev, authorData.author];
+    });
+
+    // Automatically add the new author to the project with the selected role
+    const newProjectAuthor = {
+      id: `pa-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      project_id: project.id,
+      author_id: authorData.author.id,
+      author_role: authorRole,
+      biography_id: authorData.biographies?.[0]?.id || null,
+      display_order: localAuthors.length,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      authors: authorData.author,
+      author_biographies: authorData.biographies?.[0] || null,
+    };
+
+    setLocalAuthors((prev) => [...prev, newProjectAuthor]);
+
+    // Mark this author as processed to prevent duplicates from localStorage
+    const authorKey = `${authorData.author.id}-${authorRole}`;
+    setProcessedAuthorIds((prev) => new Set([...prev, authorKey]));
+
+    console.log(
+      "Author successfully created and added to project:",
+      newProjectAuthor,
+    );
+  };
+
   return (
     <>
       {/* Project Details Card */}
@@ -416,7 +601,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
           <CardTitle className="flex justify-between items-center text-xl font-bold text-gray-900">
             <div className="flex items-center">
               <StarIcon className="h-6 w-6 mr-3 text-blue-600" />
-              Vermarktungsdaten
+              Über dieses Buch
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleOpenEditModal} size="sm">
@@ -780,12 +965,15 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                                 ? `${author.authors.first_name} ${author.authors.last_name}`
                                 : author.authors.company_name}
                             </span>
-                            {author.author_role &&
-                              author.author_role !== "Autor" && (
-                                <Badge variant="outline" className="text-xs">
-                                  {author.author_role}
-                                </Badge>
-                              )}
+                            <Badge variant="outline" className="text-xs">
+                              {author.author_role || "Autor"}
+                            </Badge>
+                            <a
+                              href={`/buchmanagement#authors&authorId=${author.authors.id}`}
+                              className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 underline decoration-2 hover:decoration-4 transition-all"
+                            >
+                              Bearbeiten
+                            </a>
                           </div>
                           {author.author_biographies?.biography_text &&
                           author.author_biographies.biography_text !==
@@ -807,57 +995,55 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 )
               ) : (
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-400 italic">
-                    Keine Urheber zugewiesen
-                  </p>
+                  {/* Show message only if no authors at all */}
+                  {(!selectedProjectData.selectedAuthors ||
+                    selectedProjectData.selectedAuthors.length === 0) && (
+                    <p className="text-sm text-gray-400 italic">
+                      Keine Urheber zugewiesen
+                    </p>
+                  )}
 
                   {/* Display newly selected authors */}
                   {selectedProjectData.selectedAuthors &&
                     selectedProjectData.selectedAuthors.length > 0 && (
-                      <div className="space-y-2">
-                        <h5 className="text-sm font-medium text-blue-700">
-                          Neu ausgewählte Urheber:
-                        </h5>
+                      <div className="space-y-3">
                         {selectedProjectData.selectedAuthors.map(
                           (selectedAuthor, index) => (
                             <div
                               key={index}
-                              className="border-l-4 border-blue-200 pl-4 p-3 rounded-lg bg-blue-50"
+                              className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
                             >
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-2">
-                                  <UserIcon className="h-4 w-4 text-blue-600" />
-                                  <span className="text-sm font-medium text-blue-900">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-gray-900">
                                     {selectedAuthor.author.author_type ===
                                     "person"
                                       ? `${selectedAuthor.author.first_name} ${selectedAuthor.author.last_name}`
                                       : selectedAuthor.author.company_name}
-                                    {selectedAuthor.role &&
-                                      selectedAuthor.role !== "Autor" && (
-                                        <span className="text-blue-700 ml-1 font-normal">
-                                          ({selectedAuthor.role})
-                                        </span>
-                                      )}
                                   </span>
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-xs bg-blue-100 text-blue-800"
-                                  >
-                                    Neu ausgewählt
+                                  <Badge variant="outline" className="text-xs">
+                                    {selectedAuthor.role || "Autor"}
                                   </Badge>
+                                  <a
+                                    href={`/buchmanagement#authors&authorId=${selectedAuthor.author.id}`}
+                                    className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 underline decoration-2 hover:decoration-4 transition-all"
+                                  >
+                                    Bearbeiten
+                                  </a>
                                 </div>
-                              </div>
-                              {selectedAuthor.biography &&
-                                selectedAuthor.biography.biography_text && (
-                                  <div className="ml-6">
-                                    <p className="text-xs font-medium text-blue-800 mb-1">
-                                      {selectedAuthor.biography.biography_label}
-                                    </p>
-                                    <p className="text-xs text-blue-700 leading-relaxed">
+                                {selectedAuthor.biography &&
+                                selectedAuthor.biography.biography_text ? (
+                                  <div className="mt-2">
+                                    <p className="text-sm text-gray-600 leading-relaxed">
                                       {selectedAuthor.biography.biography_text}
                                     </p>
                                   </div>
+                                ) : (
+                                  <p className="text-sm text-gray-500 italic mt-1">
+                                    Keine Biografie zugeordnet
+                                  </p>
                                 )}
+                              </div>
                             </div>
                           ),
                         )}
@@ -901,12 +1087,6 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                       <span className="font-medium text-gray-900">
                         {selectedProjectData.selectedSeries.name}
                       </span>
-                      <Badge
-                        variant="secondary"
-                        className="text-xs bg-blue-100 text-blue-800"
-                      >
-                        Neu ausgewählt
-                      </Badge>
                     </div>
                     {selectedProjectData.selectedSeries.description && (
                       <p className="text-sm text-gray-600 leading-relaxed mt-1">
@@ -964,12 +1144,6 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                       <span className="font-medium text-gray-900">
                         {selectedProjectData.selectedPublisher.name}
                       </span>
-                      <Badge
-                        variant="secondary"
-                        className="text-xs bg-blue-100 text-blue-800"
-                      >
-                        Neu ausgewählt
-                      </Badge>
                     </div>
                     {selectedProjectData.selectedPublisher.description && (
                       <p className="text-sm text-gray-600 leading-relaxed mt-1">
@@ -1010,12 +1184,14 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
         setSelectedBiography={setSelectedBiography || (() => {})}
         handleAddAuthorToProject={handleAddAuthorToProject || (() => {})}
         projectLanguages={project?.languages || []}
+        existingProjectAuthors={localAuthors}
       />
 
       <NewAuthorDialog
         isOpen={isNewAuthorDialogOpen}
         onOpenChange={setIsNewAuthorDialogOpenLocal}
-        onAuthorCreated={handleAuthorCreated || (() => {})}
+        onAuthorCreatedWithRole={handleLocalAuthorCreated}
+        showRoleSelection={true}
       />
 
       {/* Series Selection Dialog */}
@@ -1103,14 +1279,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 >
                   {mockVerlagsmarken.map((publisher) => (
                     <SelectItem key={publisher.id} value={publisher.id}>
-                      <div className="flex flex-col max-w-[400px]">
-                        <span className="font-medium truncate">
-                          {publisher.name}
-                        </span>
-                        <span className="text-sm text-muted-foreground truncate">
-                          {publisher.description}
-                        </span>
-                      </div>
+                      <span className="font-medium">{publisher.name}</span>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1162,174 +1331,30 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* Author Selection Dialog */}
-      <Dialog
-        open={isAuthorSelectionOpen}
+      {/* Author Selection Dialog - Using unified AddAuthorDialog */}
+      <AddAuthorDialog
+        isOpen={isAuthorSelectionOpen}
         onOpenChange={setIsAuthorSelectionOpen}
-      >
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Urheber auswählen</DialogTitle>
-            <DialogDescription>
-              Wähle einen bestehenden Urheber und eine passende Biografie aus.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="author-select">Urheber</Label>
-              <Select
-                value={selectedAuthorId}
-                onValueChange={setSelectedAuthorId}
-              >
-                <SelectTrigger id="author-select">
-                  <SelectValue placeholder="Urheber auswählen" />
-                </SelectTrigger>
-                <SelectContent
-                  className="max-h-[200px] overflow-y-auto"
-                  position="popper"
-                  sideOffset={5}
-                >
-                  {mockAuthors.map((author) => (
-                    <SelectItem key={author.id} value={author.id}>
-                      <div className="flex flex-col max-w-[500px]">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium truncate">
-                            {author.author_type === "person"
-                              ? `${author.first_name} ${author.last_name}`
-                              : author.company_name}
-                          </span>
-                          {author.is_pseudonym && (
-                            <Badge
-                              variant="secondary"
-                              className="text-xs flex-shrink-0"
-                            >
-                              Pseudonym
-                            </Badge>
-                          )}
-                        </div>
-                        {author.profession && (
-                          <span className="text-sm text-muted-foreground truncate">
-                            {author.profession}
-                          </span>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedAuthorId && (
-              <div className="space-y-2">
-                <Label htmlFor="biography-select">
-                  Biografie (Sprache: {projectLanguage.toUpperCase()})
-                </Label>
-                <Select
-                  value={selectedBiographyId}
-                  onValueChange={setSelectedBiographyId}
-                >
-                  <SelectTrigger id="biography-select">
-                    <SelectValue placeholder="Biografie auswählen" />
-                  </SelectTrigger>
-                  <SelectContent
-                    className="max-h-[200px] overflow-y-auto"
-                    position="popper"
-                    sideOffset={5}
-                  >
-                    {availableBiographies.length > 0 ? (
-                      availableBiographies.map((biography) => (
-                        <SelectItem key={biography.id} value={biography.id}>
-                          <div className="flex flex-col max-w-[500px]">
-                            <span className="font-medium truncate">
-                              {biography.biography_label}
-                            </span>
-                            <span className="text-sm text-muted-foreground line-clamp-2">
-                              {biography.biography_text.substring(0, 100)}...
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-biography" disabled>
-                        Keine Biografie in Projektsprache (
-                        {projectLanguage.toUpperCase()}) verfügbar
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-
-                {/* Display selected biography */}
-                {selectedBiographyId && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-                    <h5 className="font-medium text-sm text-gray-900 mb-2">
-                      Ausgewählte Biografie:
-                    </h5>
-                    <div className="text-left">
-                      <p className="font-medium text-sm mb-1">
-                        {
-                          availableBiographies.find(
-                            (b) => b.id === selectedBiographyId,
-                          )?.biography_label
-                        }
-                      </p>
-                      <p className="text-sm text-gray-600 leading-relaxed">
-                        {
-                          availableBiographies.find(
-                            (b) => b.id === selectedBiographyId,
-                          )?.biography_text
-                        }
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="role-select">Rolle</Label>
-              <Select
-                value={selectedAuthorRoleLocal}
-                onValueChange={setSelectedAuthorRoleLocal}
-              >
-                <SelectTrigger id="role-select">
-                  <SelectValue placeholder="Rolle auswählen" />
-                </SelectTrigger>
-                <SelectContent
-                  className="max-h-[200px] overflow-y-auto"
-                  position="popper"
-                  sideOffset={5}
-                >
-                  <SelectItem value="Autor">Autor</SelectItem>
-                  <SelectItem value="Co-Autor">Co-Autor</SelectItem>
-                  <SelectItem value="Herausgeber">Herausgeber</SelectItem>
-                  <SelectItem value="Übersetzer">Übersetzer</SelectItem>
-                  <SelectItem value="Illustrator">Illustrator</SelectItem>
-                  <SelectItem value="Lektor">Lektor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsAuthorSelectionOpen(false);
-                setSelectedAuthorId("");
-                setSelectedBiographyId("");
-                setSelectedAuthorRoleLocal("Autor");
-              }}
-            >
-              Abbrechen
-            </Button>
-            <Button
-              onClick={handleAuthorSelection}
-              disabled={!selectedAuthorId || !selectedBiographyId}
-            >
-              Hinzufügen
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        authors={mockAuthors}
+        title="Urheber auswählen"
+        description="Wähle einen bestehenden Urheber und eine passende Biografie aus."
+        buttonText="Hinzufügen"
+        standalone={true}
+        projectLanguages={project?.languages || ["de"]}
+        selectedAuthor={selectedAuthorId}
+        selectedAuthorRole={selectedAuthorRoleLocal}
+        selectedBiography={selectedBiographyId}
+        handleAuthorChange={setSelectedAuthorId}
+        setSelectedAuthorRole={setSelectedAuthorRoleLocal}
+        setSelectedBiography={setSelectedBiographyId}
+        onConfirm={() => {
+          const success = handleAuthorSelection();
+          if (success) {
+            setIsAuthorSelectionOpen(false);
+          }
+        }}
+        existingProjectAuthors={localAuthors}
+      />
     </>
   );
 };

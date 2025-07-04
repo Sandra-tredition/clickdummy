@@ -19,7 +19,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
-  "exclude": ["src/tempobook"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src"]
 }

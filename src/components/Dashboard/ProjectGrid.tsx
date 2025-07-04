@@ -26,6 +26,7 @@ interface Project {
   coverImage: string;
   language: string;
   lastEdited: string;
+  editionCount?: number;
 }
 
 interface ProjectGridProps {
@@ -124,6 +125,7 @@ const ProjectGrid = ({
                   coverImage={project.coverImage}
                   language={project.language}
                   lastEdited={project.lastEdited}
+                  editionCount={project.editionCount}
                   onView={(id) => (window.location.href = `/project/${id}`)}
                 />
               </div>

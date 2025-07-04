@@ -38,9 +38,11 @@ interface Address {
   id: string;
   types: string[];
   isDefault: { [key: string]: boolean };
+  title: string;
   name: string;
   company: string;
   street: string;
+  houseNumber: string;
   city: string;
   state: string;
   zip: string;
@@ -63,9 +65,11 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [editingAddress, setEditingAddress] = useState<string | null>(null);
   const [addressForm, setAddressForm] = useState({
+    title: "",
     name: "",
     company: "",
     street: "",
+    houseNumber: "",
     city: "",
     state: "",
     zip: "",
@@ -109,9 +113,11 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
 
   const openAddAddressDialog = () => {
     setAddressForm({
+      title: "",
       name: "",
       company: "",
       street: "",
+      houseNumber: "",
       city: "",
       state: "",
       zip: "",
@@ -125,9 +131,11 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
 
   const openEditAddressDialog = (address: Address) => {
     setAddressForm({
+      title: address.title || "",
       name: address.name,
       company: address.company || "",
       street: address.street,
+      houseNumber: address.houseNumber || "",
       city: address.city,
       state: address.state,
       zip: address.zip,
@@ -156,9 +164,11 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
     }
 
     setAddressForm({
+      title: "",
       name: "",
       company: "",
       street: "",
+      houseNumber: "",
       city: "",
       state: "",
       zip: "",
@@ -173,9 +183,11 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
     setIsAddingAddress(false);
     setEditingAddress(null);
     setAddressForm({
+      title: "",
       name: "",
       company: "",
       street: "",
+      houseNumber: "",
       city: "",
       state: "",
       zip: "",
@@ -252,6 +264,17 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
+                  <Label htmlFor="add-title">Titel (optional)</Label>
+                  <Input
+                    id="add-title"
+                    value={addressForm.title}
+                    onChange={(e) =>
+                      setAddressForm({ ...addressForm, title: e.target.value })
+                    }
+                    placeholder="Dr., Prof., etc."
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="add-name">Name</Label>
                   <Input
                     id="add-name"
@@ -276,16 +299,35 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
                     placeholder="Firmenname"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="add-street">Straße und Hausnummer</Label>
-                  <Input
-                    id="add-street"
-                    value={addressForm.street}
-                    onChange={(e) =>
-                      setAddressForm({ ...addressForm, street: e.target.value })
-                    }
-                    placeholder="Musterstraße 123"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="add-street">Straße</Label>
+                    <Input
+                      id="add-street"
+                      value={addressForm.street}
+                      onChange={(e) =>
+                        setAddressForm({
+                          ...addressForm,
+                          street: e.target.value,
+                        })
+                      }
+                      placeholder="Musterstraße"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="add-house-number">Hausnummer</Label>
+                    <Input
+                      id="add-house-number"
+                      value={addressForm.houseNumber}
+                      onChange={(e) =>
+                        setAddressForm({
+                          ...addressForm,
+                          houseNumber: e.target.value,
+                        })
+                      }
+                      placeholder="123"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -369,67 +411,57 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
                     </div>
                   )}
                 <div className="space-y-3">
-                  <Label>Verwendung</Label>
+                  <Label>Standard-Adressen</Label>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="add-billing"
-                        checked={addressForm.types.includes("billing")}
-                        onCheckedChange={(checked) =>
-                          handleAddressTypeChange("billing", checked as boolean)
-                        }
+                        id="add-billing-default"
+                        checked={addressForm.isDefault.billing || false}
+                        onCheckedChange={(checked) => {
+                          handleDefaultChange("billing", checked as boolean);
+                          if (
+                            checked &&
+                            !addressForm.types.includes("billing")
+                          ) {
+                            setAddressForm({
+                              ...addressForm,
+                              types: [...addressForm.types, "billing"],
+                              isDefault: {
+                                ...addressForm.isDefault,
+                                billing: true,
+                              },
+                            });
+                          }
+                        }}
                       />
-                      <Label htmlFor="add-billing">Rechnungsadresse</Label>
-                      {addressForm.types.includes("billing") && (
-                        <div className="flex items-center space-x-2 ml-4">
-                          <Checkbox
-                            id="add-billing-default"
-                            checked={addressForm.isDefault.billing || false}
-                            onCheckedChange={(checked) =>
-                              handleDefaultChange("billing", checked as boolean)
-                            }
-                          />
-                          <Label
-                            htmlFor="add-billing-default"
-                            className="text-sm text-muted-foreground"
-                          >
-                            Als Standard
-                          </Label>
-                        </div>
-                      )}
+                      <Label htmlFor="add-billing-default">
+                        Standard-Rechnungsadresse
+                      </Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        id="add-shipping"
-                        checked={addressForm.types.includes("shipping")}
-                        onCheckedChange={(checked) =>
-                          handleAddressTypeChange(
-                            "shipping",
-                            checked as boolean,
-                          )
-                        }
+                        id="add-shipping-default"
+                        checked={addressForm.isDefault.shipping || false}
+                        onCheckedChange={(checked) => {
+                          handleDefaultChange("shipping", checked as boolean);
+                          if (
+                            checked &&
+                            !addressForm.types.includes("shipping")
+                          ) {
+                            setAddressForm({
+                              ...addressForm,
+                              types: [...addressForm.types, "shipping"],
+                              isDefault: {
+                                ...addressForm.isDefault,
+                                shipping: true,
+                              },
+                            });
+                          }
+                        }}
                       />
-                      <Label htmlFor="add-shipping">Lieferadresse</Label>
-                      {addressForm.types.includes("shipping") && (
-                        <div className="flex items-center space-x-2 ml-4">
-                          <Checkbox
-                            id="add-shipping-default"
-                            checked={addressForm.isDefault.shipping || false}
-                            onCheckedChange={(checked) =>
-                              handleDefaultChange(
-                                "shipping",
-                                checked as boolean,
-                              )
-                            }
-                          />
-                          <Label
-                            htmlFor="add-shipping-default"
-                            className="text-sm text-muted-foreground"
-                          >
-                            Als Standard
-                          </Label>
-                        </div>
-                      )}
+                      <Label htmlFor="add-shipping-default">
+                        Standard-Lieferadresse
+                      </Label>
                     </div>
                   </div>
                 </div>
@@ -443,9 +475,11 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
                   disabled={
                     !addressForm.name ||
                     !addressForm.street ||
+                    !addressForm.houseNumber ||
                     !addressForm.city ||
                     !addressForm.zip ||
-                    addressForm.types.length === 0
+                    (!addressForm.isDefault.billing &&
+                      !addressForm.isDefault.shipping)
                   }
                 >
                   Adresse hinzufügen
@@ -490,7 +524,7 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
                       </p>
                     )}
                     <p className="text-sm text-muted-foreground truncate">
-                      {address.street}
+                      {address.street} {address.houseNumber}
                     </p>
                     <p className="text-sm text-muted-foreground truncate">
                       {address.zip} {address.city}
@@ -502,9 +536,40 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
                       {address.country}
                     </p>
                     <div className="flex flex-wrap gap-1 mt-2 sm:hidden">
-                      {getTypeLabels(address.types).map((label, index) => {
-                        const type = address.types[index];
-                        const isDefault = address.isDefault[type];
+                      {address.types
+                        .filter((type) => address.isDefault[type])
+                        .map((type) => {
+                          const label =
+                            type === "billing"
+                              ? "Standard-Rechnungsadresse"
+                              : "Standard-Lieferadresse";
+                          return (
+                            <Badge
+                              key={type}
+                              variant="secondary"
+                              className={`text-xs rounded-full ${
+                                type === "billing"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-green-100 text-green-800"
+                              }`}
+                            >
+                              {label}
+                              <Star size={10} className="ml-1 fill-current" />
+                            </Badge>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0 self-start sm:self-center">
+                  <div className="hidden sm:flex flex-col gap-1 items-end mr-2">
+                    {address.types
+                      .filter((type) => address.isDefault[type])
+                      .map((type) => {
+                        const label =
+                          type === "billing"
+                            ? "Standard-Rechnungsadresse"
+                            : "Standard-Lieferadresse";
                         return (
                           <Badge
                             key={type}
@@ -516,37 +581,10 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
                             }`}
                           >
                             {label}
-                            {isDefault && (
-                              <Star size={10} className="ml-1 fill-current" />
-                            )}
+                            <Star size={10} className="ml-1 fill-current" />
                           </Badge>
                         );
                       })}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0 self-start sm:self-center">
-                  <div className="hidden sm:flex flex-col gap-1 items-end mr-2">
-                    {getTypeLabels(address.types).map((label, index) => {
-                      const type = address.types[index];
-                      const isDefault = address.isDefault[type];
-                      return (
-                        <Badge
-                          key={type}
-                          variant="secondary"
-                          className={`text-xs rounded-full ${
-                            type === "billing"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          {label}
-                          {isDefault && (
-                            <Star size={10} className="ml-1 fill-current" />
-                          )}
-                        </Badge>
-                      );
-                    })}
                   </div>
                   <Dialog
                     open={editingAddress === address.id}
@@ -570,6 +608,20 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-title">Titel (optional)</Label>
+                          <Input
+                            id="edit-title"
+                            value={addressForm.title}
+                            onChange={(e) =>
+                              setAddressForm({
+                                ...addressForm,
+                                title: e.target.value,
+                              })
+                            }
+                            placeholder="Dr., Prof., etc."
+                          />
+                        </div>
                         <div className="space-y-2">
                           <Label htmlFor="edit-name">Name</Label>
                           <Input
@@ -600,21 +652,37 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
                             placeholder="Firmenname"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-street">
-                            Straße und Hausnummer
-                          </Label>
-                          <Input
-                            id="edit-street"
-                            value={addressForm.street}
-                            onChange={(e) =>
-                              setAddressForm({
-                                ...addressForm,
-                                street: e.target.value,
-                              })
-                            }
-                            placeholder="Musterstraße 123"
-                          />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="space-y-2 sm:col-span-2">
+                            <Label htmlFor="edit-street">Straße</Label>
+                            <Input
+                              id="edit-street"
+                              value={addressForm.street}
+                              onChange={(e) =>
+                                setAddressForm({
+                                  ...addressForm,
+                                  street: e.target.value,
+                                })
+                              }
+                              placeholder="Musterstraße"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-house-number">
+                              Hausnummer
+                            </Label>
+                            <Input
+                              id="edit-house-number"
+                              value={addressForm.houseNumber}
+                              onChange={(e) =>
+                                setAddressForm({
+                                  ...addressForm,
+                                  houseNumber: e.target.value,
+                                })
+                              }
+                              placeholder="123"
+                            />
+                          </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -710,81 +778,65 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
                             </div>
                           )}
                         <div className="space-y-3">
-                          <Label>Verwendung</Label>
+                          <Label>Standard-Adressen</Label>
                           <div className="space-y-2">
                             <div className="flex items-center space-x-2">
                               <Checkbox
-                                id="edit-billing"
-                                checked={addressForm.types.includes("billing")}
-                                onCheckedChange={(checked) =>
-                                  handleAddressTypeChange(
+                                id="edit-billing-default"
+                                checked={addressForm.isDefault.billing || false}
+                                onCheckedChange={(checked) => {
+                                  handleDefaultChange(
                                     "billing",
                                     checked as boolean,
-                                  )
-                                }
+                                  );
+                                  if (
+                                    checked &&
+                                    !addressForm.types.includes("billing")
+                                  ) {
+                                    setAddressForm({
+                                      ...addressForm,
+                                      types: [...addressForm.types, "billing"],
+                                      isDefault: {
+                                        ...addressForm.isDefault,
+                                        billing: true,
+                                      },
+                                    });
+                                  }
+                                }}
                               />
-                              <Label htmlFor="edit-billing">
-                                Rechnungsadresse
+                              <Label htmlFor="edit-billing-default">
+                                Standard-Rechnungsadresse
                               </Label>
-                              {addressForm.types.includes("billing") && (
-                                <div className="flex items-center space-x-2 ml-4">
-                                  <Checkbox
-                                    id="edit-billing-default"
-                                    checked={
-                                      addressForm.isDefault.billing || false
-                                    }
-                                    onCheckedChange={(checked) =>
-                                      handleDefaultChange(
-                                        "billing",
-                                        checked as boolean,
-                                      )
-                                    }
-                                  />
-                                  <Label
-                                    htmlFor="edit-billing-default"
-                                    className="text-sm text-muted-foreground"
-                                  >
-                                    Als Standard
-                                  </Label>
-                                </div>
-                              )}
                             </div>
                             <div className="flex items-center space-x-2">
                               <Checkbox
-                                id="edit-shipping"
-                                checked={addressForm.types.includes("shipping")}
-                                onCheckedChange={(checked) =>
-                                  handleAddressTypeChange(
+                                id="edit-shipping-default"
+                                checked={
+                                  addressForm.isDefault.shipping || false
+                                }
+                                onCheckedChange={(checked) => {
+                                  handleDefaultChange(
                                     "shipping",
                                     checked as boolean,
-                                  )
-                                }
+                                  );
+                                  if (
+                                    checked &&
+                                    !addressForm.types.includes("shipping")
+                                  ) {
+                                    setAddressForm({
+                                      ...addressForm,
+                                      types: [...addressForm.types, "shipping"],
+                                      isDefault: {
+                                        ...addressForm.isDefault,
+                                        shipping: true,
+                                      },
+                                    });
+                                  }
+                                }}
                               />
-                              <Label htmlFor="edit-shipping">
-                                Lieferadresse
+                              <Label htmlFor="edit-shipping-default">
+                                Standard-Lieferadresse
                               </Label>
-                              {addressForm.types.includes("shipping") && (
-                                <div className="flex items-center space-x-2 ml-4">
-                                  <Checkbox
-                                    id="edit-shipping-default"
-                                    checked={
-                                      addressForm.isDefault.shipping || false
-                                    }
-                                    onCheckedChange={(checked) =>
-                                      handleDefaultChange(
-                                        "shipping",
-                                        checked as boolean,
-                                      )
-                                    }
-                                  />
-                                  <Label
-                                    htmlFor="edit-shipping-default"
-                                    className="text-sm text-muted-foreground"
-                                  >
-                                    Als Standard
-                                  </Label>
-                                </div>
-                              )}
                             </div>
                           </div>
                         </div>
@@ -798,9 +850,11 @@ const AddressManagement: React.FC<AddressManagementProps> = ({
                           disabled={
                             !addressForm.name ||
                             !addressForm.street ||
+                            !addressForm.houseNumber ||
                             !addressForm.city ||
                             !addressForm.zip ||
-                            addressForm.types.length === 0
+                            (!addressForm.isDefault.billing &&
+                              !addressForm.isDefault.shipping)
                           }
                         >
                           Änderungen speichern

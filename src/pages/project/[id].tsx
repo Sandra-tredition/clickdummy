@@ -1,48 +1,23 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import Layout from "@/components/Layout";
 import ProjectHeader from "@/components/Project/ProjectHeader";
 import ProjectCover from "@/components/Project/ProjectCover";
 import ProjectDetails from "@/components/Project/ProjectDetails";
-// SimplifiedProjectTabs removed as requested
 import ProjectEditForm from "@/components/Project/ProjectEditForm";
-import EditionsList from "@/components/Project/EditionsList";
+
 import AddEditionDialog from "@/components/Project/dialogs/AddEditionDialog";
 import AddAuthorDialog from "@/components/Project/dialogs/AddAuthorDialog";
 import NewAuthorDialog from "@/components/Project/dialogs/NewAuthorDialog";
+import ProjectTour from "@/components/Project/ProjectTour";
+import VersionTabs from "@/components/Project/VersionTabs";
+import ComparisonSidebar from "@/components/Project/ComparisonSidebar";
+import EditionTabsSection from "@/components/Project/EditionTabsSection";
+import StickyFooter from "@/components/Project/StickyFooter";
+import PublishedOnlyNotice from "@/components/Project/PublishedOnlyNotice";
 import { fetchProjectById } from "@/lib/api/projects";
 import { supabase } from "@/lib/supabase";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import {
-  GitCompareIcon as CompareIcon,
-  XIcon,
-  UserIcon,
-  TrashIcon,
-  BookOpenIcon,
-  BookIcon,
-  TabletIcon,
-  FileTextIcon,
-  CheckCircleIcon,
-  AlertCircleIcon,
-  PlusCircleIcon,
-  EditIcon,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 interface Author {
   id: string;
@@ -92,6 +67,7 @@ interface Project {
 
 const ProjectDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   console.log("Extracted ID from route params:", id);
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
@@ -99,6 +75,13 @@ const ProjectDetailPage = () => {
   const [authors, setAuthors] = useState<Author[]>([]);
   const [editions, setEditions] = useState<Edition[]>([]);
   const [allAuthors, setAllAuthors] = useState<any[]>([]);
+
+  // Load all authors from mock data on component mount
+  useEffect(() => {
+    import("@/lib/mockData/authors").then(({ mockAuthors }) => {
+      setAllAuthors(mockAuthors);
+    });
+  }, []);
   const [authorBiographies, setAuthorBiographies] = useState<any[]>([]);
 
   // State for editing mode
@@ -125,11 +108,23 @@ const ProjectDetailPage = () => {
   // State for edition tabs
   const [activeEditionTab, setActiveEditionTab] = useState<string>("");
 
-  // Check if tour should start on this page
+  // State for accordion opening
+  const [openAccordion, setOpenAccordion] = useState<string>("");
+
+  // Check if tour should start on this page and handle accordion opening
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const startTour = urlParams.get("startTour");
+    const startTour = searchParams.get("startTour");
+    const openAccordionParam = searchParams.get("openAccordion");
     const hasSeenTour = localStorage.getItem(`hasSeenTour_${id}`);
+
+    // Handle accordion opening
+    if (openAccordionParam) {
+      setOpenAccordion(openAccordionParam);
+      // Remove the parameter from URL after setting state
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete("openAccordion");
+      setSearchParams(newSearchParams, { replace: true });
+    }
 
     // Start tour automatically for new projects (frontend- prefix) or when startTour=true
     if (
@@ -140,14 +135,12 @@ const ProjectDetailPage = () => {
       setShowTour(true);
       // Remove the parameter from URL if it exists
       if (startTour === "true") {
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname,
-        );
+        const newSearchParams = new URLSearchParams(searchParams);
+        newSearchParams.delete("startTour");
+        setSearchParams(newSearchParams, { replace: true });
       }
     }
-  }, [id, project]);
+  }, [id, project, searchParams, setSearchParams]);
 
   // Tour functions
   const nextTourStep = () => {
@@ -346,7 +339,7 @@ const ProjectDetailPage = () => {
                   ausgabenart: "Sonderedition",
                   price: 49.99,
                   pages: 450,
-                  status: "Im Verkauf",
+                  status: "Veröffentlicht",
                   isbn: "978-3-987654-33-8",
                   cover_image:
                     "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&q=80",
@@ -360,24 +353,58 @@ const ProjectDetailPage = () => {
               ],
               authors: [
                 {
-                  id: "7",
+                  id: "pa-1-1",
                   project_id: projectId,
-                  author_id: "7",
+                  author_id: "author-1", // Maria Schmidt
                   author_role: "Hauptautor",
+                  biography_id: "bio-author-1-1",
                   display_order: 0,
+                  created_at: "2024-01-15T10:00:00Z",
+                  updated_at: "2024-01-15T10:00:00Z",
                   authors: {
-                    id: "7",
-                    first_name: "Dr. Sarah",
-                    last_name: "Hoffmann",
+                    id: "author-1",
+                    first_name: "Maria",
+                    last_name: "Schmidt",
                     author_type: "person",
                     is_pseudonym: false,
-                    birth_date: "1985-04-12",
-                    profession: "Verlagsexpertin und Digitalisierungsberaterin",
-                    website: "www.sarah-hoffmann-publishing.de",
+                    birth_date: "1975-03-15",
+                    profession: "Schriftstellerin und Schreibcoach",
+                    website: "https://maria-schmidt-autorin.de",
                   },
                   author_biographies: {
+                    id: "bio-author-1-1",
+                    author_id: "author-1",
                     biography_text:
-                      "Dr. Sarah Hoffmann ist eine renommierte Verlagsexpertin und Digitalisierungsberaterin mit über 10 Jahren Erfahrung in der Branche.",
+                      "Maria Schmidt ist eine erfahrene Autorin und Schreibcoach mit über 15 Jahren Erfahrung in der Verlagsbranche. Sie hat bereits mehrere erfolgreiche Ratgeber veröffentlicht und gibt regelmäßig Workshops für angehende Autoren.",
+                    biography_label: "Standard",
+                    language: "de",
+                  },
+                },
+                {
+                  id: "pa-1-2",
+                  project_id: projectId,
+                  author_id: "author-2", // Thomas Weber
+                  author_role: "Co-Autor",
+                  biography_id: "bio-author-2-1",
+                  display_order: 1,
+                  created_at: "2024-01-16T09:30:00Z",
+                  updated_at: "2024-01-16T09:30:00Z",
+                  authors: {
+                    id: "author-2",
+                    first_name: "Thomas",
+                    last_name: "Weber",
+                    author_type: "person",
+                    is_pseudonym: false,
+                    birth_date: "1968-11-22",
+                    profession: "Lektor und Autor",
+                    website: "https://thomas-weber-lektor.com",
+                  },
+                  author_biographies: {
+                    id: "bio-author-2-1",
+                    author_id: "author-2",
+                    biography_text:
+                      "Thomas Weber hat als Lektor bei mehreren großen Verlagen gearbeitet und teilt sein Wissen über den Publikationsprozess. Seine Expertise umfasst sowohl die redaktionelle Bearbeitung als auch die strategische Buchvermarktung.",
+                    biography_label: "Standard",
                     language: "de",
                   },
                 },
@@ -394,8 +421,8 @@ const ProjectDetailPage = () => {
                   "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&q=80",
                 languages: ["Deutsch"],
                 genres: ["non-fiction.writing", "education", "creativity"],
-                series: "series-2",
-                publisher: "Kreativ Verlag",
+                series: "series-1",
+                publisher: "Eigenverlag Premium",
                 created_at: "2023-09-15T14:00:00Z",
                 updated_at: "2023-12-20T10:15:00Z",
                 user_id: "user-2",
@@ -411,47 +438,33 @@ const ProjectDetailPage = () => {
                 keywords:
                   "Kreatives Schreiben, Roman schreiben, Schreibtipps, Storytelling, Charakterentwicklung, Plot",
               },
-              editions: [
-                {
-                  id: "8",
-                  project_id: projectId,
-                  title: "Basis Edition",
-                  produktform: "Softcover",
-                  ausgabenart: "Standardausgabe",
-                  price: 24.99,
-                  pages: 320,
-                  status: "Veröffentlicht",
-                  isbn: "978-3-987654-34-5",
-                  cover_image:
-                    "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&q=80",
-                  is_complete: true,
-                  format_complete: true,
-                  content_complete: true,
-                  cover_complete: true,
-                  pricing_complete: true,
-                  authors_complete: true,
-                },
-              ],
+              editions: [],
               authors: [
                 {
-                  id: "8",
+                  id: "pa-2-1",
                   project_id: projectId,
-                  author_id: "8",
-                  author_role: "Autor",
+                  author_id: "author-11", // Elena Richter
+                  author_role: "Hauptautor",
+                  biography_id: "bio-author-11-1",
                   display_order: 0,
+                  created_at: "2024-02-05T10:30:00Z",
+                  updated_at: "2024-02-05T10:30:00Z",
                   authors: {
-                    id: "8",
-                    first_name: "Maria",
-                    last_name: "Schreiber",
+                    id: "author-11",
+                    first_name: "Elena",
+                    last_name: "Richter",
                     author_type: "person",
                     is_pseudonym: false,
-                    birth_date: "1978-11-22",
-                    profession: "Schriftstellerin und Schreibcoach",
-                    website: "www.maria-schreiber.de",
+                    birth_date: "1987-08-25",
+                    profession: "Schreibtrainerin und Autorin",
+                    website: "https://elena-richter-schreibtraining.de",
                   },
                   author_biographies: {
+                    id: "bio-author-11-1",
+                    author_id: "author-11",
                     biography_text:
-                      "Maria Schreiber ist eine erfolgreiche Schriftstellerin und Schreibcoach mit über 15 Jahren Erfahrung im kreativen Schreiben.",
+                      "Elena Richter ist eine erfahrene Schreibtrainerin und Autorin, die sich auf kreatives Schreiben und Storytelling spezialisiert hat. Sie leitet Workshops für angehende Autoren und hat bereits mehrere erfolgreiche Ratgeber zum Thema Schreiben veröffentlicht.",
+                    biography_label: "Standard",
                     language: "de",
                   },
                 },
@@ -472,8 +485,8 @@ const ProjectDetailPage = () => {
                   "non-fiction.marketing",
                   "entrepreneurship",
                 ],
-                series: "series-3",
-                publisher: "Business Verlag",
+                series: "series-2",
+                publisher: "Kreativ Verlag",
                 created_at: "2023-10-01T09:30:00Z",
                 updated_at: "2023-12-18T15:45:00Z",
                 user_id: "user-3",
@@ -517,13 +530,13 @@ const ProjectDetailPage = () => {
                   ausgabenart: "Standardausgabe",
                   price: 19.99,
                   pages: 380,
-                  status: "Im Verkauf",
+                  status: "In Bearbeitung",
                   isbn: "978-3-987654-36-9",
                   cover_image:
                     "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=80",
-                  is_complete: true,
+                  is_complete: false,
                   format_complete: true,
-                  content_complete: true,
+                  content_complete: false,
                   cover_complete: true,
                   pricing_complete: true,
                   authors_complete: true,
@@ -531,24 +544,58 @@ const ProjectDetailPage = () => {
               ],
               authors: [
                 {
-                  id: "9",
+                  id: "pa-3-1",
                   project_id: projectId,
-                  author_id: "9",
-                  author_role: "Autor",
+                  author_id: "author-12", // Dr. Marcus Bauer
+                  author_role: "Hauptautor",
+                  biography_id: "bio-author-12-1",
                   display_order: 0,
+                  created_at: "2024-02-06T14:15:00Z",
+                  updated_at: "2024-02-06T14:15:00Z",
                   authors: {
-                    id: "9",
-                    first_name: "Thomas",
-                    last_name: "Marketing",
+                    id: "author-12",
+                    first_name: "Dr. Marcus",
+                    last_name: "Bauer",
                     author_type: "person",
                     is_pseudonym: false,
-                    birth_date: "1982-07-15",
-                    profession: "Marketingberater und Unternehmer",
-                    website: "www.thomas-marketing.com",
+                    birth_date: "1972-11-14",
+                    profession: "Literaturwissenschaftler und Autor",
+                    website: "https://dr-marcus-bauer.de",
                   },
                   author_biographies: {
+                    id: "bio-author-12-1",
+                    author_id: "author-12",
                     biography_text:
-                      "Thomas Marketing ist ein erfahrener Marketingberater, der bereits über 200 Kleinunternehmen zum Erfolg verholfen hat.",
+                      "Dr. Marcus Bauer ist Literaturwissenschaftler an der Universität München und Experte für moderne deutsche Literatur. Er verbindet wissenschaftliche Expertise mit praktischen Schreibtechniken und hat bereits mehrere Fachbücher über Literaturanalyse und Schreibmethoden veröffentlicht.",
+                    biography_label: "Standard",
+                    language: "de",
+                  },
+                },
+                {
+                  id: "pa-3-2",
+                  project_id: projectId,
+                  author_id: "author-6", // Sarah Klein (Illustratorin)
+                  author_role: "Illustrator",
+                  biography_id: "bio-author-6-1",
+                  display_order: 1,
+                  created_at: "2024-01-20T13:15:00Z",
+                  updated_at: "2024-01-20T13:15:00Z",
+                  authors: {
+                    id: "author-6",
+                    first_name: "Sarah",
+                    last_name: "Klein",
+                    author_type: "person",
+                    is_pseudonym: false,
+                    birth_date: "1990-12-03",
+                    profession: "Illustratorin",
+                    website: "https://sarah-klein-illustration.com",
+                  },
+                  author_biographies: {
+                    id: "bio-author-6-1",
+                    author_id: "author-6",
+                    biography_text:
+                      "Sarah Klein ist eine talentierte Illustratorin, die sich auf Kinderbuch-Illustrationen spezialisiert hat. Ihre farbenfrohen und fantasievollen Zeichnungen haben bereits viele Kinderbücher zum Leben erweckt.",
+                    biography_label: "Standard",
                     language: "de",
                   },
                 },
@@ -749,6 +796,32 @@ const ProjectDetailPage = () => {
     return result;
   }, [editions]);
 
+  // Check if project has only published editions (no drafts/in-progress)
+  const hasOnlyPublishedEditions = useMemo(() => {
+    if (editions.length === 0) return false;
+    const allPublished = editions.every(
+      (edition) =>
+        edition.status === "Veröffentlicht" || edition.status === "Im Verkauf",
+    );
+    console.log("hasOnlyPublishedEditions result:", allPublished);
+    return allPublished;
+  }, [editions]);
+
+  // Check if project has mixed editions (both published and in-progress)
+  const hasMixedEditions = useMemo(() => {
+    const hasPublished = editions.some(
+      (edition) =>
+        edition.status === "Veröffentlicht" || edition.status === "Im Verkauf",
+    );
+    const hasInProgress = editions.some(
+      (edition) =>
+        edition.status === "In Bearbeitung" || edition.status === "Entwurf",
+    );
+    const result = hasPublished && hasInProgress;
+    console.log("hasMixedEditions result:", result);
+    return result;
+  }, [editions]);
+
   const handleEditToggle = () => {
     console.log("Edit toggle clicked");
     setIsEditing(!isEditing);
@@ -935,46 +1008,6 @@ const ProjectDetailPage = () => {
     return differences.some((diff) => diff.field === fieldName);
   };
 
-  // Function to get icon for product form
-  const getProductFormIcon = (produktform: string) => {
-    switch (produktform?.toLowerCase()) {
-      case "softcover":
-        return <BookOpenIcon className="h-6 w-6" />;
-      case "hardcover":
-        return <BookIcon className="h-6 w-6" />;
-      case "e-book":
-        return <TabletIcon className="h-6 w-6" />;
-      default:
-        return <FileTextIcon className="h-6 w-6" />;
-    }
-  };
-
-  // Function to get status color and icon
-  const getStatusInfo = (edition: Edition) => {
-    const isComplete = edition.is_complete;
-    const status = edition.status;
-
-    if (status === "Veröffentlicht" || status === "Im Verkauf") {
-      return {
-        color: "bg-green-100 text-green-800 border-green-200",
-        icon: <CheckCircleIcon className="h-3 w-3" />,
-        text: status === "Im Verkauf" ? "Im Verkauf" : "Veröffentlicht",
-      };
-    } else if (isComplete) {
-      return {
-        color: "bg-blue-100 text-blue-800 border-blue-200",
-        icon: <CheckCircleIcon className="h-3 w-3" />,
-        text: "Bereit",
-      };
-    } else {
-      return {
-        color: "bg-amber-100 text-amber-800 border-amber-200",
-        icon: <AlertCircleIcon className="h-3 w-3" />,
-        text: "In Bearbeitung",
-      };
-    }
-  };
-
   // Handle author selection change
   const handleAuthorChange = (authorId: string) => {
     setSelectedAuthor(authorId);
@@ -985,7 +1018,12 @@ const ProjectDetailPage = () => {
       // Import and use mock biographies
       import("@/lib/mockData/authors").then(({ getBiographiesForAuthor }) => {
         const biographies = getBiographiesForAuthor(authorId);
-        setAuthorBiographies(biographies);
+        // Filter by project language
+        const projectLanguage = project?.languages?.[0] || "de";
+        const filteredBiographies = biographies.filter(
+          (bio) => bio.language === projectLanguage,
+        );
+        setAuthorBiographies(filteredBiographies);
       });
     } else {
       setAuthorBiographies([]);
@@ -1049,6 +1087,33 @@ const ProjectDetailPage = () => {
     setAuthors((prev) => [...prev, newProjectAuthor]);
   };
 
+  // Handle unlocking project for editing (when all editions are published)
+  const handleUnlockForEditing = () => {
+    console.log("Unlocking project for editing");
+    // Create a draft edition to enable editing mode
+    const newDraftEdition = {
+      id: `draft-${Date.now()}`,
+      project_id: id || "",
+      title: "Neue Ausgabe (Entwurf)",
+      produktform: "Softcover",
+      ausgabenart: "Standardausgabe",
+      price: 0,
+      pages: 0,
+      status: "Entwurf",
+      isbn: "",
+      cover_image: project?.cover_image || "",
+      is_complete: false,
+      format_complete: false,
+      content_complete: false,
+      cover_complete: false,
+      pricing_complete: false,
+      authors_complete: false,
+    };
+
+    setEditions((prev) => [...prev, newDraftEdition]);
+    setActiveEditionTab(newDraftEdition.id);
+  };
+
   if (loading) {
     return (
       <Layout title="Projekt wird geladen...">
@@ -1092,44 +1157,6 @@ const ProjectDetailPage = () => {
     );
   }
 
-  // Version tabs and comparison button component
-  const VersionTabsSection = () => (
-    <div className="bg-gray-100 border-gray-200 shadow-sm mb-6 py-3">
-      <div className="max-w-full mx-auto px-4">
-        <div className="flex justify-between items-center">
-          <div className="flex-1 max-w-md">
-            <div className="bg-white rounded-md shadow-sm border border-gray-200 p-1">
-              <div className="grid grid-cols-2 gap-1">
-                <button
-                  onClick={() => setActiveTab("editing")}
-                  className={`px-4 py-2 text-center rounded-md transition-colors ${activeTab === "editing" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted/50"}`}
-                >
-                  Version in Bearbeitung
-                </button>
-                <button
-                  onClick={() => setActiveTab("published")}
-                  className={`px-4 py-2 text-center rounded-md transition-colors ${activeTab === "published" ? "bg-primary text-primary-foreground font-medium" : "text-muted-foreground hover:bg-muted/50"}`}
-                >
-                  Veröffentlichte Version
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <Button
-            variant={isCompareMode ? "secondary" : "outline"}
-            className="ml-4 shadow-sm"
-            onClick={() => setIsCompareMode(!isCompareMode)}
-            disabled={!publishedProject}
-          >
-            <CompareIcon className="h-4 w-4 mr-2" />
-            {isCompareMode ? "Vergleich beenden" : "Änderungen anzeigen"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
   const breadcrumbs = [
     { label: "Buchmanagement", href: "/buchmanagement" },
     { label: project?.title || "Projekt" },
@@ -1139,61 +1166,26 @@ const ProjectDetailPage = () => {
 
   return (
     <Layout title="" breadcrumbs={breadcrumbs}>
-      {/* Tour Overlay */}
-      {showTour && (
-        <>
-          {/* Dimming overlay */}
-          <div className="fixed inset-0 bg-black bg-opacity-60 z-40" />
-
-          {/* Spotlight effect for target element */}
-          {currentStep.target && (
-            <div
-              className="fixed z-45 pointer-events-none"
-              style={{
-                boxShadow: `0 0 0 9999px rgba(0, 0, 0, 0.6)`,
-                ...getTargetElementPosition(currentStep.target),
-              }}
-            />
-          )}
-
-          {/* Tour dialog */}
-          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <div className="bg-white rounded-lg p-6 max-w-md mx-4 relative pointer-events-auto shadow-2xl">
-              <button
-                onClick={closeTour}
-                className="absolute top-2 right-2 p-1 hover:bg-gray-100 rounded"
-              >
-                <XIcon className="h-4 w-4" />
-              </button>
-              <h3 className="text-lg font-semibold mb-3">
-                {currentStep.title}
-              </h3>
-              <p className="text-gray-600 mb-4">{currentStep.content}</p>
-              <div className="flex justify-between items-center">
-                <div className="flex space-x-1">
-                  {tourSteps.map((_, index) => (
-                    <div
-                      key={index}
-                      className={`w-2 h-2 rounded-full ${
-                        index === tourStep ? "bg-blue-500" : "bg-gray-300"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={closeTour}>
-                    Überspringen
-                  </Button>
-                  <Button onClick={nextTourStep}>
-                    {tourStep < tourSteps.length - 1 ? "Weiter" : "Fertig"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
+      <ProjectTour
+        showTour={showTour}
+        tourStep={tourStep}
+        tourSteps={tourSteps}
+        onNextStep={nextTourStep}
+        onCloseTour={closeTour}
+        getTargetElementPosition={getTargetElementPosition}
+      />
+      {hasMixedEditions && (
+        <VersionTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isCompareMode={isCompareMode}
+          setIsCompareMode={setIsCompareMode}
+          publishedProject={publishedProject}
+        />
       )}
-      {hasPublishedEditions && <VersionTabsSection />}
+      {hasOnlyPublishedEditions && (
+        <PublishedOnlyNotice onUnlockForEditing={handleUnlockForEditing} />
+      )}
       <div className="max-w-full mx-auto px-4">
         <ProjectHeader
           project={{
@@ -1266,38 +1258,11 @@ const ProjectDetailPage = () => {
             },
           ]}
         />
-        {isCompareMode && (
-          <div className="fixed right-0 top-0 h-full w-80 bg-white border-l border-gray-200 shadow-lg overflow-y-auto z-10 p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Änderungen</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsCompareMode(false)}
-              >
-                <XIcon className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {getProjectDifferences().length === 0 ? (
-              <p className="text-gray-500 italic">Keine Änderungen gefunden</p>
-            ) : (
-              <div className="space-y-4">
-                {getProjectDifferences().map((diff, index) => (
-                  <div key={index} className="border-b pb-3">
-                    <h4 className="font-medium text-sm">{diff.field}</h4>
-                    <div className="mt-1 text-sm bg-red-50 p-2 rounded">
-                      <span className="line-through">{diff.oldValue}</span>
-                    </div>
-                    <div className="mt-1 text-sm bg-green-50 p-2 rounded">
-                      <span>{diff.newValue}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        <ComparisonSidebar
+          isCompareMode={isCompareMode}
+          setIsCompareMode={setIsCompareMode}
+          getProjectDifferences={getProjectDifferences}
+        />
         <div className={isCompareMode ? "mr-80" : ""}>
           {activeTab === "editing" ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -1315,324 +1280,15 @@ const ProjectDetailPage = () => {
               </div>
               <div className="md:col-span-2">
                 <div data-tour-target="editions-section">
-                  {/* Edition Tabs Section */}
-                  <div className="w-full mb-8">
-                    {editions.length === 0 ? (
-                      <Card>
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                              <BookOpenIcon className="h-6 w-6 mr-3 text-blue-600" />
-                              Ausgaben
-                            </h2>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2 h-auto bg-gray-50 rounded-lg p-1">
-                            <button
-                              onClick={() => setIsAddEditionDialogOpen(true)}
-                              className="flex flex-col items-center p-4 h-auto min-h-[120px] border border-dashed border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors cursor-pointer"
-                            >
-                              <div className="flex flex-col items-center justify-center h-full space-y-2">
-                                <div className="text-green-400">
-                                  <PlusCircleIcon className="h-6 w-6" />
-                                </div>
-                                <div className="text-center text-sm text-green-400 font-medium">
-                                  Erste Ausgabe anlegen
-                                </div>
-                              </div>
-                            </button>
-                            <div className="flex flex-col items-center p-4 h-auto min-h-[120px] border border-gray-200 rounded-lg bg-gray-50 opacity-30">
-                              <div className="flex flex-col items-center justify-center h-full space-y-2">
-                                <div className="text-gray-400">
-                                  <PlusCircleIcon className="h-6 w-6" />
-                                </div>
-                                <div className="text-center text-xs text-gray-400">
-                                  Weitere Ausgabe
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <Card>
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-6">
-                            <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
-                              <BookOpenIcon className="h-6 w-6 mr-3 text-blue-600" />
-                              Ausgaben
-                            </CardTitle>
-                          </div>
-                          <Tabs
-                            value={activeEditionTab}
-                            onValueChange={setActiveEditionTab}
-                            className="w-full"
-                          >
-                            <TabsList
-                              className="grid gap-2 h-auto bg-gray-50 rounded-lg"
-                              style={{
-                                gridTemplateColumns: `repeat(${Math.min(editions.length + 1, 5)}, 1fr)`,
-                              }}
-                            >
-                              {editions.map((edition, index) => {
-                                const statusInfo = getStatusInfo(edition);
-                                const isActive =
-                                  activeEditionTab === edition.id;
-
-                                return (
-                                  <TabsTrigger
-                                    key={edition.id}
-                                    value={edition.id}
-                                    className={`flex flex-col items-center p-4 h-auto min-h-[120px] data-[state=active]:bg-white data-[state=active]:shadow-sm border border-gray-300 data-[state=active]:border-green-500 data-[state=active]:border-1 data-[state=inactive]:bg-gray-100 data-[state=inactive]:hover:bg-gray-200 rounded-lg transition-colors`}
-                                  >
-                                    <div className="flex flex-col items-center justify-between h-full space-y-2">
-                                      <div className="text-gray-600">
-                                        {getProductFormIcon(
-                                          edition.produktform,
-                                        )}
-                                      </div>
-                                      <div className="text-center flex-1 flex flex-col justify-center">
-                                        <div className="font-medium text-sm">
-                                          {edition.produktform}
-                                        </div>
-                                        <div className="text-xs text-gray-500 mt-1 min-h-[16px]">
-                                          {edition.ausgabenart || ""}
-                                        </div>
-                                      </div>
-                                      <div
-                                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${statusInfo.color}`}
-                                      >
-                                        {statusInfo.icon}
-                                        {statusInfo.text}
-                                      </div>
-                                    </div>
-                                  </TabsTrigger>
-                                );
-                              })}
-                              {/* Add Edition Tab Tile */}
-                              <TabsTrigger
-                                value="add-edition"
-                                className="flex flex-col items-center p-4 h-auto min-h-[120px] border border-dashed border-green-300 bg-white hover:bg-green-50 rounded-lg transition-colors cursor-pointer"
-                                onClick={() => setIsAddEditionDialogOpen(true)}
-                              >
-                                <div className="flex flex-col items-center justify-center h-full space-y-2">
-                                  <div className="text-black">
-                                    <PlusCircleIcon className="h-6 w-6" />
-                                  </div>
-                                  <div className="text-center text-sm text-black font-normal">
-                                    Neue Ausgabe
-                                  </div>
-                                  <div className="text-center text-sm text-black font-normal">
-                                    hinzufügen
-                                  </div>
-                                </div>
-                              </TabsTrigger>
-                            </TabsList>
-
-                            {editions.map((edition) => (
-                              <TabsContent
-                                key={edition.id}
-                                value={edition.id}
-                                className="mt-2"
-                              >
-                                <div className="bg-white border border-gray-200 border-t-green-500 border-t-1 rounded-lg rounded-t-none shadow-sm overflow-hidden">
-                                  <div className="p-4 border-b bg-white flex justify-between items-center">
-                                    <div className="flex items-center gap-3 flex-1">
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                          <h3 className="text-base font-medium">
-                                            {edition.produktform}
-                                          </h3>
-                                        </div>
-                                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                                          <span>
-                                            {edition.ausgabenart ||
-                                              "Standardausgabe"}
-                                          </span>
-                                          {edition.isbn && (
-                                            <span className="flex items-center gap-2">
-                                              <span className="text-gray-400">
-                                                •
-                                              </span>
-                                              <span>ISBN: {edition.isbn}</span>
-                                            </span>
-                                          )}
-                                          {!edition.isbn && (
-                                            <span className="flex items-center gap-1">
-                                              <span className="text-gray-400">
-                                                •
-                                              </span>
-                                              <span className="italic">
-                                                Keine ISBN
-                                              </span>
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="border-red-500 text-red-500 hover:bg-red-50"
-                                          >
-                                            <TrashIcon className="h-4 w-4" />
-                                          </Button>
-                                        </AlertDialogTrigger>
-
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => {
-                                            window.location.href = `/edition/${edition.id}`;
-                                          }}
-                                        >
-                                          <EditIcon className="h-4 w-4 mr-1" />
-                                          Bearbeiten
-                                        </Button>
-                                        <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                            <AlertDialogTitle>
-                                              Ausgabe löschen
-                                            </AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                              Möchten Sie die Ausgabe "
-                                              {edition.produktform}" wirklich
-                                              löschen? Diese Aktion kann nicht
-                                              rückgängig gemacht werden.
-                                            </AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                            <AlertDialogCancel>
-                                              Abbrechen
-                                            </AlertDialogCancel>
-                                            <AlertDialogAction
-                                              onClick={async () => {
-                                                try {
-                                                  // Remove edition from local state
-                                                  setEditions(
-                                                    editions.filter(
-                                                      (e) =>
-                                                        e.id !== edition.id,
-                                                    ),
-                                                  );
-
-                                                  toast({
-                                                    title: "Erfolg",
-                                                    description:
-                                                      "Die Ausgabe wurde erfolgreich gelöscht.",
-                                                  });
-                                                } catch (error) {
-                                                  console.error(
-                                                    "Error deleting edition:",
-                                                    error,
-                                                  );
-                                                  toast({
-                                                    title: "Fehler",
-                                                    description:
-                                                      "Die Ausgabe konnte nicht gelöscht werden.",
-                                                    variant: "destructive",
-                                                  });
-                                                }
-                                              }}
-                                              className="bg-red-500 hover:bg-red-600 text-white"
-                                            >
-                                              Löschen
-                                            </AlertDialogAction>
-                                          </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
-                                    </div>
-                                  </div>
-
-                                  <div className="p-4">
-                                    <div className="space-y-4">
-                                      <div className="flex justify-between items-center">
-                                        {edition.pages && edition.pages > 0 && (
-                                          <div className="text-sm text-gray-500">
-                                            {edition.pages} Seiten
-                                          </div>
-                                        )}
-                                      </div>
-
-                                      <div className="flex flex-wrap mt-4 items-center justify-between">
-                                        <div className="flex flex-wrap gap-1">
-                                          <a
-                                            href={`/edition/${edition.id}?tab=format`}
-                                            className={`px-3 py-1 rounded-md ${edition.format_complete ? "bg-green-50 text-green-700 border border-green-200" : "bg-amber-50 text-amber-700 border border-amber-200"} cursor-pointer hover:opacity-90`}
-                                          >
-                                            <span className="text-xs font-medium flex items-center">
-                                              {edition.format_complete ? (
-                                                <CheckCircleIcon className="h-3 w-3 mr-1 text-green-500" />
-                                              ) : (
-                                                <AlertCircleIcon className="h-3 w-3 mr-1 text-amber-500" />
-                                              )}
-                                              Format
-                                            </span>
-                                          </a>
-                                          <a
-                                            href={`/edition/${edition.id}?tab=content`}
-                                            className={`px-3 py-1 rounded-md ${edition.content_complete ? "bg-green-50 text-green-700 border border-green-200" : "bg-amber-50 text-amber-700 border border-amber-200"} cursor-pointer hover:opacity-90`}
-                                          >
-                                            <span className="text-xs font-medium flex items-center">
-                                              {edition.content_complete ? (
-                                                <CheckCircleIcon className="h-3 w-3 mr-1 text-green-500" />
-                                              ) : (
-                                                <AlertCircleIcon className="h-3 w-3 mr-1 text-amber-500" />
-                                              )}
-                                              Inhalt
-                                            </span>
-                                          </a>
-                                          <a
-                                            href={`/edition/${edition.id}?tab=cover`}
-                                            className={`px-3 py-1 rounded-md ${edition.cover_complete ? "bg-green-50 text-green-700 border border-green-200" : "bg-amber-50 text-amber-700 border border-amber-200"} cursor-pointer hover:opacity-90`}
-                                          >
-                                            <span className="text-xs font-medium flex items-center">
-                                              {edition.cover_complete ? (
-                                                <CheckCircleIcon className="h-3 w-3 mr-1 text-green-500" />
-                                              ) : (
-                                                <AlertCircleIcon className="h-3 w-3 mr-1 text-amber-500" />
-                                              )}
-                                              Cover
-                                            </span>
-                                          </a>
-                                          <a
-                                            href={`/edition/${edition.id}?tab=pricing`}
-                                            className={`px-3 py-1 rounded-md ${edition.pricing_complete ? "bg-green-50 text-green-700 border border-green-200" : "bg-amber-50 text-amber-700 border border-amber-200"} cursor-pointer hover:opacity-90`}
-                                          >
-                                            <span className="text-xs font-medium flex items-center">
-                                              {edition.pricing_complete ? (
-                                                <CheckCircleIcon className="h-3 w-3 mr-1 text-green-500" />
-                                              ) : (
-                                                <AlertCircleIcon className="h-3 w-3 mr-1 text-amber-500" />
-                                              )}
-                                              Preis
-                                            </span>
-                                          </a>
-                                        </div>
-                                        <div className="text-right">
-                                          <div className="text-sm text-gray-500">
-                                            Preis
-                                          </div>
-                                          <div className="font-bold text-lg">
-                                            {edition.price
-                                              ? `${edition.price.toFixed(2)} €`
-                                              : "--,-- €"}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </TabsContent>
-                            ))}
-                          </Tabs>
-                        </CardContent>
-                      </Card>
-                    )}
-                    <div className="border-b pb-4 mt-8"></div>
-                  </div>
+                  <EditionTabsSection
+                    editions={editions}
+                    setEditions={setEditions}
+                    activeEditionTab={activeEditionTab}
+                    setActiveEditionTab={setActiveEditionTab}
+                    setIsAddEditionDialogOpen={setIsAddEditionDialogOpen}
+                    isPublishedView={false}
+                  />
+                  <div className="border-b pb-4 mt-8"></div>
                 </div>
                 <div className={isCompareMode ? "relative" : ""}>
                   {isCompareMode && (
@@ -1704,6 +1360,8 @@ const ProjectDetailPage = () => {
                     setSelectedBiography={setSelectedBiography}
                     handleAddAuthorToProject={handleAddAuthorToProject}
                     handleAuthorCreated={handleAuthorCreated}
+                    openAccordion={openAccordion}
+                    setOpenAccordion={setOpenAccordion}
                   />
                 </div>
               </div>
@@ -1747,244 +1405,15 @@ const ProjectDetailPage = () => {
                     vorgenommen werden.
                   </p>
                 </div>
-                {/* Published Edition Tabs Section - Read Only */}
-                <div className="w-full mb-8">
-                  {editions.length === 0 ? (
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-6">
-                          <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                            <BookOpenIcon className="h-6 w-6 mr-3 text-blue-600" />
-                            Ausgaben
-                          </h2>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 h-auto bg-gray-50 rounded-lg p-1">
-                          <div className="flex flex-col items-center p-4 h-auto min-h-[120px] border border-dashed border-gray-300 rounded-lg bg-white opacity-50">
-                            <div className="flex flex-col items-center justify-center h-full space-y-2">
-                              <div className="text-gray-400">
-                                <PlusCircleIcon className="h-6 w-6" />
-                              </div>
-                              <div className="text-center text-sm text-gray-400">
-                                Erste Ausgabe anlegen
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-center p-4 h-auto min-h-[120px] border border-gray-200 rounded-lg bg-gray-50 opacity-30">
-                            <div className="flex flex-col items-center justify-center h-full space-y-2">
-                              <div className="text-gray-400">
-                                <PlusCircleIcon className="h-6 w-6" />
-                              </div>
-                              <div className="text-center text-xs text-gray-400">
-                                Weitere Ausgabe
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-6">
-                          <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                            <BookOpenIcon className="h-6 w-6 mr-3 text-blue-600" />
-                            Ausgaben
-                          </h2>
-                        </div>
-                        <Tabs
-                          value={activeEditionTab}
-                          onValueChange={setActiveEditionTab}
-                          className="w-full"
-                        >
-                          <TabsList
-                            className="grid gap-2 h-auto bg-gray-50 rounded-lg"
-                            style={{
-                              gridTemplateColumns:
-                                editions.length === 1
-                                  ? "1fr 1fr"
-                                  : `repeat(${Math.min(editions.length, 4)}, 1fr)`,
-                            }}
-                          >
-                            {editions.map((edition, index) => {
-                              const statusInfo = getStatusInfo(edition);
-                              const isActive = activeEditionTab === edition.id;
-                              // Only show the first edition if there's only one, or show all if there are multiple
-                              if (editions.length === 1 && index > 0)
-                                return null;
-
-                              return (
-                                <TabsTrigger
-                                  key={edition.id}
-                                  value={edition.id}
-                                  className={`flex flex-col items-center p-4 h-auto min-h-[120px] data-[state=active]:bg-white data-[state=active]:shadow-sm border border-gray-300 data-[state=active]:border-green-500 data-[state=active]:border-2 data-[state=inactive]:bg-gray-100 data-[state=inactive]:hover:bg-gray-200 rounded-lg transition-colors ${
-                                    editions.length === 1 ? "col-span-1" : ""
-                                  } ${
-                                    isActive ? "rounded-b-none border-b-0" : ""
-                                  }`}
-                                >
-                                  <div className="flex flex-col items-center justify-between h-full space-y-2">
-                                    <div className="text-gray-600">
-                                      {getProductFormIcon(edition.produktform)}
-                                    </div>
-                                    <div className="text-center flex-1 flex flex-col justify-center">
-                                      <div className="font-medium text-sm">
-                                        {edition.produktform}
-                                      </div>
-                                      <div className="text-xs text-gray-500 mt-1 min-h-[16px]">
-                                        {edition.ausgabenart || ""}
-                                      </div>
-                                    </div>
-                                    <div
-                                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${statusInfo.color}`}
-                                    >
-                                      {statusInfo.icon}
-                                      {statusInfo.text}
-                                    </div>
-                                  </div>
-                                </TabsTrigger>
-                              );
-                            })}
-                            {/* Non-clickable placeholder for published version */}
-                            {editions.length === 1 && (
-                              <div className="flex flex-col items-center p-4 h-auto min-h-[120px] border border-gray-200 rounded-lg bg-gray-50 opacity-30">
-                                <div className="flex flex-col items-center justify-center h-full space-y-2">
-                                  <div className="text-gray-400">
-                                    <PlusCircleIcon className="h-6 w-6" />
-                                  </div>
-                                  <div className="text-center text-xs text-gray-400">
-                                    Weitere Ausgabe
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </TabsList>
-
-                          {editions.map((edition) => (
-                            <TabsContent
-                              key={edition.id}
-                              value={edition.id}
-                              className="mt-0"
-                            >
-                              <div className="bg-white border border-gray-200 border-t-green-500 border-t-2 rounded-lg rounded-t-none shadow-sm overflow-hidden">
-                                <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
-                                  <div className="flex items-center gap-3 flex-1">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2">
-                                        <h3 className="text-base font-medium">
-                                          {edition.produktform}
-                                        </h3>
-                                      </div>
-                                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                                        <span>
-                                          {edition.ausgabenart ||
-                                            "Standardausgabe"}
-                                        </span>
-                                        {edition.isbn && (
-                                          <span className="flex items-center gap-2">
-                                            <span className="text-gray-400">
-                                              •
-                                            </span>
-                                            <span>ISBN: {edition.isbn}</span>
-                                          </span>
-                                        )}
-                                        {!edition.isbn && (
-                                          <span className="flex items-center gap-1">
-                                            <span className="text-gray-400">
-                                              •
-                                            </span>
-                                            <span className="italic">
-                                              Keine ISBN
-                                            </span>
-                                          </span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="p-4">
-                                  <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                      {edition.pages && edition.pages > 0 && (
-                                        <div className="text-sm text-gray-500">
-                                          {edition.pages} Seiten
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    <div className="flex flex-wrap mt-4 items-center justify-between">
-                                      <div className="flex flex-wrap gap-1">
-                                        <div
-                                          className={`px-3 py-1 rounded-md ${edition.format_complete ? "bg-green-50 text-green-700 border border-green-200" : "bg-amber-50 text-amber-700 border border-amber-200"}`}
-                                        >
-                                          <span className="text-xs font-medium flex items-center">
-                                            {edition.format_complete ? (
-                                              <CheckCircleIcon className="h-3 w-3 mr-1 text-green-500" />
-                                            ) : (
-                                              <AlertCircleIcon className="h-3 w-3 mr-1 text-amber-500" />
-                                            )}
-                                            Format
-                                          </span>
-                                        </div>
-                                        <div
-                                          className={`px-3 py-1 rounded-md ${edition.content_complete ? "bg-green-50 text-green-700 border border-green-200" : "bg-amber-50 text-amber-700 border border-amber-200"}`}
-                                        >
-                                          <span className="text-xs font-medium flex items-center">
-                                            {edition.content_complete ? (
-                                              <CheckCircleIcon className="h-3 w-3 mr-1 text-green-500" />
-                                            ) : (
-                                              <AlertCircleIcon className="h-3 w-3 mr-1 text-amber-500" />
-                                            )}
-                                            Inhalt
-                                          </span>
-                                        </div>
-                                        <div
-                                          className={`px-3 py-1 rounded-md ${edition.cover_complete ? "bg-green-50 text-green-700 border border-green-200" : "bg-amber-50 text-amber-700 border border-amber-200"}`}
-                                        >
-                                          <span className="text-xs font-medium flex items-center">
-                                            {edition.cover_complete ? (
-                                              <CheckCircleIcon className="h-3 w-3 mr-1 text-green-500" />
-                                            ) : (
-                                              <AlertCircleIcon className="h-3 w-3 mr-1 text-amber-500" />
-                                            )}
-                                            Cover
-                                          </span>
-                                        </div>
-                                        <div
-                                          className={`px-3 py-1 rounded-md ${edition.pricing_complete ? "bg-green-50 text-green-700 border border-green-200" : "bg-amber-50 text-amber-700 border border-amber-200"}`}
-                                        >
-                                          <span className="text-xs font-medium flex items-center">
-                                            {edition.pricing_complete ? (
-                                              <CheckCircleIcon className="h-3 w-3 mr-1 text-green-500" />
-                                            ) : (
-                                              <AlertCircleIcon className="h-3 w-3 mr-1 text-amber-500" />
-                                            )}
-                                            Preis
-                                          </span>
-                                        </div>
-                                      </div>
-                                      <div className="text-right">
-                                        <div className="text-sm text-gray-500">
-                                          Preis
-                                        </div>
-                                        <div className="font-bold text-lg">
-                                          {edition.price
-                                            ? `${edition.price.toFixed(2)} €`
-                                            : "--,-- €"}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </TabsContent>
-                          ))}
-                        </Tabs>
-                      </CardContent>
-                    </Card>
-                  )}
-                  <div className="border-b pb-4 mt-8"></div>
-                </div>
+                <EditionTabsSection
+                  editions={editions}
+                  setEditions={setEditions}
+                  activeEditionTab={activeEditionTab}
+                  setActiveEditionTab={setActiveEditionTab}
+                  setIsAddEditionDialogOpen={() => {}}
+                  isPublishedView={true}
+                />
+                <div className="border-b pb-4 mt-8"></div>
                 <div className={isCompareMode ? "relative" : ""}>
                   {isCompareMode && (
                     <div className="absolute inset-0 bg-blue-50 bg-opacity-30 pointer-events-none z-10"></div>
@@ -2019,131 +1448,19 @@ const ProjectDetailPage = () => {
           setSelectedAuthorRole={setSelectedAuthorRole}
           setSelectedBiography={setSelectedBiography}
           handleAddAuthorToProject={handleAddAuthorToProject}
+          projectLanguages={project?.languages || []}
         />
         <NewAuthorDialog
           isOpen={isNewAuthorDialogOpen}
           onOpenChange={setIsNewAuthorDialogOpen}
           onAuthorCreated={handleAuthorCreated}
         />
-        {/* Last Edited Information */}
       </div>
-      {/* Bottom spacing to prevent sticky bar overlap */}
-      <div className="h-20"></div>
-      {/* Sticky Footer Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center py-4">
-            {/* Left side - Project Delete Button */}
-            <div className="flex-shrink-0">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="border-red-500 text-red-500 hover:bg-red-50"
-                    size="sm"
-                  >
-                    <TrashIcon className="h-4 w-4 mr-2" />
-                    Projekt löschen
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Projekt löschen</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Möchten Sie dieses Projekt wirklich löschen? Diese Aktion
-                      kann nicht rückgängig gemacht werden. Alle zugehörigen
-                      Ausgaben und Autorenzuweisungen werden ebenfalls gelöscht.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={async () => {
-                        try {
-                          // Use the deleteProject function from the API library
-                          const { deleteProject } = await import(
-                            "@/lib/api/projects"
-                          );
-                          const { error } = await deleteProject(id as string);
-
-                          if (error) {
-                            console.error("Error deleting project:", error);
-                            toast({
-                              title: "Fehler",
-                              description:
-                                "Das Projekt konnte nicht gelöscht werden.",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-
-                          toast({
-                            title: "Erfolg",
-                            description:
-                              "Das Projekt wurde erfolgreich gelöscht.",
-                          });
-
-                          // Redirect to projects list
-                          window.location.href = "/";
-                        } catch (error) {
-                          console.error("Error deleting project:", error);
-                          toast({
-                            title: "Fehler",
-                            description:
-                              "Das Projekt konnte nicht gelöscht werden.",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
-                      className="bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      Löschen
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-
-            {/* Right side - Status and Publish Button */}
-            <div className="flex items-center gap-3">
-              {/* Status Badge */}
-              <div className="flex-shrink-0">
-                {isProjectReadyForPublishing() ? (
-                  <Badge className="bg-green-600 text-white flex items-center rounded-full whitespace-nowrap">
-                    <CheckCircleIcon className="h-4 w-4 mr-1" />
-                    Bereit zur Veröffentlichung
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="secondary"
-                    className="bg-amber-100 text-amber-800 border border-amber-200 flex items-center whitespace-nowrap"
-                  >
-                    <AlertCircleIcon className="h-4 w-4 mr-1" />
-                    In Bearbeitung
-                  </Badge>
-                )}
-              </div>
-
-              {/* Publish Button */}
-              <Button
-                data-tour-target="publish-button"
-                disabled={!isProjectReadyForPublishing()}
-                className={
-                  !isProjectReadyForPublishing()
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }
-                onClick={() => {
-                  setIsPublishingModalOpen(true);
-                }}
-                size="sm"
-              >
-                Veröffentlichen
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <StickyFooter
+        isProjectReadyForPublishing={isProjectReadyForPublishing}
+        setIsPublishingModalOpen={setIsPublishingModalOpen}
+        projectId={id || ""}
+      />
     </Layout>
   );
 };

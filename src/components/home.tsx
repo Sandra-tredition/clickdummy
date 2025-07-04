@@ -70,23 +70,37 @@ const Home = () => {
           return;
         }
 
-        // For demo user, load demo projects from localStorage
+        // For demo user, load demo projects from mock data
         if (isDemoUser) {
           console.log("Demo user detected - loading demo projects");
-          const demoProjects = JSON.parse(
-            localStorage.getItem("demoProjects") || "[]",
-          );
+
+          // Import and use mock projects directly
+          const { getProjectsByUser } = await import("@/lib/mockData/projects");
+          const demoProjects = getProjectsByUser("demo@example.com");
 
           if (demoProjects.length > 0) {
-            const uiProjects = demoProjects.map((project: any) => ({
-              id: project.id,
-              title: project.title,
-              coverImage: project.cover_image,
-              status: project.status,
-              lastEdited: project.updated_at
-                ? new Date(project.updated_at).toISOString().split("T")[0]
-                : new Date().toISOString().split("T")[0],
-            }));
+            // Import editions data to get edition counts
+            const { mockProjects } = await import("@/lib/mockData/projects");
+
+            const uiProjects = demoProjects.map((project: any) => {
+              // Get edition count from mock data based on project ID
+              let editionCount = 0;
+              if (project.id === "1") editionCount = 2; // Digitales Publizieren has 2 editions
+              if (project.id === "2") editionCount = 0; // Kreatives Schreiben has 0 editions
+              if (project.id === "3") editionCount = 2; // Marketing has 2 editions
+
+              return {
+                id: project.id,
+                title: project.title,
+                coverImage: project.cover_image,
+                status: project.status,
+                languages: project.languages,
+                editionCount: editionCount,
+                lastEdited: project.updated_at
+                  ? new Date(project.updated_at).toISOString().split("T")[0]
+                  : new Date().toISOString().split("T")[0],
+              };
+            });
             setProjects(uiProjects);
             return;
           }
@@ -119,6 +133,8 @@ const Home = () => {
               project.cover_image ||
               "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400&q=80",
             status: "draft",
+            languages: project.languages || ["Deutsch"],
+            editionCount: 0, // Default to 0 for database projects
             lastEdited: project.updated_at
               ? new Date(project.updated_at).toISOString().split("T")[0]
               : new Date().toISOString().split("T")[0],
@@ -146,6 +162,8 @@ const Home = () => {
         coverImage:
           "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800&q=80",
         status: "draft",
+        languages: ["Deutsch"],
+        editionCount: 0,
         lastEdited: new Date().toISOString().split("T")[0],
       };
       setProjects([demoProject]);
@@ -167,6 +185,9 @@ const Home = () => {
         coverImage:
           "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400&q=80",
         status: "draft" as const,
+        languages:
+          selectedLanguages.length > 0 ? selectedLanguages : ["Deutsch"],
+        editionCount: 0,
         lastEdited: new Date().toISOString().split("T")[0],
       };
 
@@ -308,6 +329,9 @@ const Home = () => {
 
       <Card className="p-6">
         <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Buchprojekte</h1>
+          </div>
           <div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>

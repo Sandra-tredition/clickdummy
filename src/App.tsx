@@ -1,7 +1,8 @@
 import { Suspense, lazy, useEffect } from "react";
-import { useRoutes, Routes, Route } from "react-router-dom";
+import { Routes, Route, useRoutes } from "react-router-dom";
 import Home from "./components/home";
 import routes from "tempo-routes";
+
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { supabase } from "./lib/supabase";
@@ -292,6 +293,7 @@ function App() {
     <AuthProvider>
       <Suspense fallback={<p>Loading...</p>}>
         <>
+          {import.meta.env.VITE_TEMPO && useRoutes(routes)}
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -331,12 +333,8 @@ function App() {
               <Route path="/edition/:id" element={<EditionDetail />} />
               <Route path="/order/:id" element={<OrderDetail />} />
             </Route>
-
-            {import.meta.env.VITE_TEMPO === "true" && (
-              <Route path="/tempobook/*" />
-            )}
+            {import.meta.env.VITE_TEMPO && <Route path="/tempobook/*" />}
           </Routes>
-          {import.meta.env.VITE_TEMPO === "true" && useRoutes(routes)}
         </>
       </Suspense>
     </AuthProvider>
