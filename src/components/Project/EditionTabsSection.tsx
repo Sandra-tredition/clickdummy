@@ -107,7 +107,6 @@ const EditionTabsSection: React.FC<EditionTabsSectionProps> = ({
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-gray-900 flex items-center">
-              <BookOpenIcon className="h-6 w-6 mr-3 text-blue-600" />
               Ausgaben
             </h2>
           </div>
@@ -158,8 +157,7 @@ const EditionTabsSection: React.FC<EditionTabsSectionProps> = ({
     <Card>
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
-          <CardTitle className="text-xl font-bold text-gray-900 flex items-center">
-            <BookOpenIcon className="h-6 w-6 mr-3 text-blue-600" />
+          <CardTitle className="text-xxl font-bold text-gray-900 flex items-center">
             Ausgaben
           </CardTitle>
         </div>

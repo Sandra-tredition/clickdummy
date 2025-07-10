@@ -15,6 +15,7 @@ const ResetPassword = lazy(() => import("./pages/reset-password"));
 const Dashboard = lazy(() => import("./pages/dashboard"));
 const Buchmanagement = lazy(() => import("./pages/buchmanagement"));
 const Authors = lazy(() => import("./pages/authors"));
+const AuthorDetail = lazy(() => import("./pages/authors/[id]"));
 const Reports = lazy(() => import("./pages/reports"));
 const Series = lazy(() => import("./pages/series"));
 const Verlagsmarken = lazy(() => import("./pages/verlagsmarken"));
@@ -304,6 +305,7 @@ function App() {
               <Route path="/buchmanagement" element={<Buchmanagement />} />
               <Route path="/account" element={<Account />} />
               <Route path="/authors" element={<Authors />} />
+              <Route path="/authors/:id" element={<AuthorDetail />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/series" element={<Series />} />
               <Route path="/verlagsmarken" element={<Verlagsmarken />} />

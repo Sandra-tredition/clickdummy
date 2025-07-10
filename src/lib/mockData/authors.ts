@@ -17,16 +17,6 @@ export interface MockAuthor {
   updated_at: string;
 }
 
-export interface MockAuthorBiography {
-  id: string;
-  author_id: string;
-  biography_text: string;
-  biography_label: string;
-  language: string;
-  created_at: string;
-  updated_at: string;
-}
-
 export const mockAuthors: MockAuthor[] = [
   {
     id: "author-1",
@@ -188,6 +178,17 @@ export const mockAuthors: MockAuthor[] = [
   },
 ];
 
+export interface MockAuthorBiography {
+  id: string;
+  author_id: string;
+  biography_text: string;
+  biography_label?: string;
+  language: string;
+  is_standard?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export const mockAuthorBiographies: MockAuthorBiography[] = [
   // Maria Schmidt Biographies
   {
@@ -196,30 +197,12 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Maria Schmidt ist eine erfahrene Autorin und Schreibcoach mit über 15 Jahren Erfahrung in der Verlagsbranche. Sie hat bereits mehrere erfolgreiche Ratgeber veröffentlicht und gibt regelmäßig Workshops für angehende Autoren.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-01-15T10:00:00Z",
     updated_at: "2024-01-15T10:00:00Z",
   },
-  {
-    id: "bio-author-1-2",
-    author_id: "author-1",
-    biography_text:
-      "Maria Schmidt, Autorin und Schreibcoach. Über 15 Jahre Verlagserfahrung.",
-    biography_label: "Kurzer Lebenslauf",
-    language: "de",
-    created_at: "2024-01-15T10:05:00Z",
-    updated_at: "2024-01-15T10:05:00Z",
-  },
-  {
-    id: "bio-author-1-3",
-    author_id: "author-1",
-    biography_text:
-      "Maria Schmidt is an experienced author and writing coach with over 15 years of experience in the publishing industry. She has published several successful guidebooks and regularly conducts workshops for aspiring authors.",
-    biography_label: "Standard (English)",
-    language: "en",
-    created_at: "2024-01-15T10:10:00Z",
-    updated_at: "2024-01-15T10:10:00Z",
-  },
+
   // Thomas Weber Biographies
   {
     id: "bio-author-2-1",
@@ -227,18 +210,10 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Thomas Weber hat als Lektor bei mehreren großen Verlagen gearbeitet und teilt sein Wissen über den Publikationsprozess. Seine Expertise umfasst sowohl die redaktionelle Bearbeitung als auch die strategische Buchvermarktung.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-01-16T09:30:00Z",
     updated_at: "2024-01-16T09:30:00Z",
-  },
-  {
-    id: "bio-author-2-2",
-    author_id: "author-2",
-    biography_text: "Thomas Weber, erfahrener Lektor und Buchmarketingexperte.",
-    biography_label: "Wisschenschaftlich",
-    language: "de",
-    created_at: "2024-01-16T09:35:00Z",
-    updated_at: "2024-01-16T09:35:00Z",
   },
   // Literaturverlag GmbH Biography
   {
@@ -247,7 +222,8 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Die Literaturverlag GmbH ist ein renommierter Verlag für Fachliteratur im Bereich Schreiben und Publizieren. Seit über 20 Jahren unterstützt der Verlag Autoren bei der Veröffentlichung hochwertiger Sachbücher.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-01-10T14:00:00Z",
     updated_at: "2024-01-10T14:00:00Z",
   },
@@ -258,18 +234,10 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Anna Müller schreibt unter Pseudonym und ist bekannt für ihre fesselnden Fantasy-Romane. Ihre Werke haben bereits mehrere Literaturpreise gewonnen und stehen regelmäßig auf den Bestsellerlisten.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-01-12T16:45:00Z",
     updated_at: "2024-01-12T16:45:00Z",
-  },
-  {
-    id: "bio-author-4-2",
-    author_id: "author-4",
-    biography_text: "Anna Müller, preisgekrönte Fantasy-Autorin.",
-    biography_label: "Kurz",
-    language: "de",
-    created_at: "2024-01-12T16:50:00Z",
-    updated_at: "2024-01-12T16:50:00Z",
   },
   // Dr. Michael Hoffmann Biographies
   {
@@ -278,7 +246,8 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Dr. Michael Hoffmann ist Professor für Literaturwissenschaft an der Universität Hamburg. Er hat zahlreiche wissenschaftliche Artikel und Bücher über moderne Literatur veröffentlicht und ist ein gefragter Experte in seinem Fachgebiet.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-01-18T11:20:00Z",
     updated_at: "2024-01-18T11:20:00Z",
   },
@@ -289,7 +258,8 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Sarah Klein ist eine talentierte Illustratorin, die sich auf Kinderbuch-Illustrationen spezialisiert hat. Ihre farbenfrohen und fantasievollen Zeichnungen haben bereits viele Kinderbücher zum Leben erweckt.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-01-20T13:15:00Z",
     updated_at: "2024-01-20T13:15:00Z",
   },
@@ -300,7 +270,8 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Robert Fischer ist ein erfahrener Übersetzer, der sich auf literarische Übersetzungen aus dem Englischen und Französischen spezialisiert hat. Seine Übersetzungen zeichnen sich durch ihre Präzision und sprachliche Eleganz aus.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-01-22T08:30:00Z",
     updated_at: "2024-01-22T08:30:00Z",
   },
@@ -311,7 +282,8 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Der Bildungsverlag Nord ist ein etablierter Verlag für Bildungs- und Lehrmaterialien. Mit einem Fokus auf innovative Lernkonzepte unterstützt der Verlag Bildungseinrichtungen und Lernende aller Altersgruppen.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-01-25T10:00:00Z",
     updated_at: "2024-01-25T10:00:00Z",
   },
@@ -322,18 +294,10 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Lisa Wagner schreibt unter Pseudonym und ist eine der erfolgreichsten Krimi-Autorinnen Deutschlands. Ihre spannungsgeladenen Thriller stehen regelmäßig auf den Bestsellerlisten und wurden bereits für das Fernsehen adaptiert.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-01-28T15:45:00Z",
     updated_at: "2024-01-28T15:45:00Z",
-  },
-  {
-    id: "bio-author-9-2",
-    author_id: "author-9",
-    biography_text: "Lisa Wagner, Bestseller-Autorin im Krimi-Genre.",
-    biography_label: "Kurz",
-    language: "de",
-    created_at: "2024-01-28T15:50:00Z",
-    updated_at: "2024-01-28T15:50:00Z",
   },
   // Prof. Dr. Klaus Zimmermann Biographies
   {
@@ -342,7 +306,8 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Prof. Dr. Klaus Zimmermann ist emeritierter Professor der TU Berlin und anerkannter Experte für Technikgeschichte. Seine Forschungsarbeiten und Publikationen haben maßgeblich zur Entwicklung seines Fachgebiets beigetragen.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-02-01T09:00:00Z",
     updated_at: "2024-02-01T09:00:00Z",
   },
@@ -353,19 +318,10 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Elena Richter ist eine erfahrene Schreibtrainerin und Autorin, die sich auf kreatives Schreiben und Storytelling spezialisiert hat. Sie leitet Workshops für angehende Autoren und hat bereits mehrere erfolgreiche Ratgeber zum Thema Schreiben veröffentlicht.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-02-05T10:30:00Z",
     updated_at: "2024-02-05T10:30:00Z",
-  },
-  {
-    id: "bio-author-11-2",
-    author_id: "author-11",
-    biography_text:
-      "Elena Richter, Schreibtrainerin und Storytelling-Expertin.",
-    biography_label: "Kurz",
-    language: "de",
-    created_at: "2024-02-05T10:35:00Z",
-    updated_at: "2024-02-05T10:35:00Z",
   },
   // Dr. Marcus Bauer Biographies
   {
@@ -374,19 +330,10 @@ export const mockAuthorBiographies: MockAuthorBiography[] = [
     biography_text:
       "Dr. Marcus Bauer ist Literaturwissenschaftler an der Universität München und Experte für moderne deutsche Literatur. Er verbindet wissenschaftliche Expertise mit praktischen Schreibtechniken und hat bereits mehrere Fachbücher über Literaturanalyse und Schreibmethoden veröffentlicht.",
     biography_label: "Standard",
-    language: "de",
+    language: "Deutsch",
+    is_standard: true,
     created_at: "2024-02-06T14:15:00Z",
     updated_at: "2024-02-06T14:15:00Z",
-  },
-  {
-    id: "bio-author-12-2",
-    author_id: "author-12",
-    biography_text:
-      "Dr. Marcus Bauer, Literaturwissenschaftler und Schreibexperte.",
-    biography_label: "Kurz",
-    language: "de",
-    created_at: "2024-02-06T14:20:00Z",
-    updated_at: "2024-02-06T14:20:00Z",
   },
 ];
 
@@ -495,6 +442,15 @@ export const mockProjectAssignments: MockProjectAssignment[] = [
     author_role: "Hauptautor",
     project_status: "In Bearbeitung",
     created_at: "2024-03-01T10:00:00Z",
+  },
+  {
+    id: "assignment-other-1b",
+    author_id: "author-1",
+    project_id: "project-other-1b",
+    project_title: "Buchmarketing ohne Budget",
+    author_role: "Autor",
+    project_status: "Geplant",
+    created_at: "2024-03-15T10:00:00Z",
   },
   {
     id: "assignment-other-2",
@@ -746,8 +702,18 @@ export const mockProjectAssignmentsWithBio: MockProjectAssignmentWithBio[] = [
     project_title: "Schreibtipps für Fortgeschrittene",
     author_role: "Hauptautor",
     project_status: "In Bearbeitung",
-    biography_id: "bio-author-1-2", // Kurz biography
+    biography_id: "bio-author-1-1", // Standard biography
     created_at: "2024-03-01T10:00:00Z",
+  },
+  {
+    id: "assignment-bio-other-1b",
+    author_id: "author-1",
+    project_id: "project-other-1b",
+    project_title: "Buchmarketing ohne Budget",
+    author_role: "Autor",
+    project_status: "Geplant",
+    biography_id: "", // No biography assigned - will show "Ohne Biografie"
+    created_at: "2024-03-15T10:00:00Z",
   },
   {
     id: "assignment-bio-other-2",
@@ -975,6 +941,166 @@ export const getProjectAssignmentsForAuthorBiography = (
       assignment.author_id === authorId &&
       assignment.biography_id === biographyId,
   );
+};
+
+// Project-specific biography data structure
+export interface ProjectBiography {
+  id: string;
+  project_id: string;
+  author_id: string;
+  biography_text: string;
+  language: string;
+  is_standard_based?: boolean; // Whether this was created from a standard biography
+  standard_biography_id?: string; // Reference to the standard biography it was based on
+  created_at: string;
+  updated_at: string;
+}
+
+// Mock project-specific biographies
+export const mockProjectBiographies: ProjectBiography[] = [
+  // Project 1: "Digitales Publizieren Meistern"
+  {
+    id: "proj-bio-1-author-1",
+    project_id: "1",
+    author_id: "author-1",
+    biography_text:
+      "Maria Schmidt ist eine erfahrene Autorin und Schreibcoach mit über 15 Jahren Erfahrung in der Verlagsbranche. Sie hat bereits mehrere erfolgreiche Ratgeber veröffentlicht und gibt regelmäßig Workshops für angehende Autoren. Ihre Expertise im Bereich Self-Publishing macht sie zur idealen Autorin für diesen umfassenden Leitfaden.",
+
+    language: "Deutsch",
+    is_standard_based: true,
+    standard_biography_id: "bio-author-1-1",
+    created_at: "2024-01-15T10:00:00Z",
+    updated_at: "2024-01-15T10:00:00Z",
+  },
+  {
+    id: "proj-bio-1-author-2",
+    project_id: "1",
+    author_id: "author-2",
+    biography_text:
+      "Thomas Weber hat als Lektor bei mehreren großen Verlagen gearbeitet und teilt sein Wissen über den Publikationsprozess. Seine Expertise umfasst sowohl die redaktionelle Bearbeitung als auch die strategische Buchvermarktung. Als Co-Autor bringt er wertvolle Branchenkenntnisse ein.",
+
+    language: "Deutsch",
+    is_standard_based: true,
+    standard_biography_id: "bio-author-2-1",
+    created_at: "2024-01-16T09:30:00Z",
+    updated_at: "2024-01-16T09:30:00Z",
+  },
+
+  // Project 2: "Kreatives Schreiben für Anfänger"
+  {
+    id: "proj-bio-2-author-11",
+    project_id: "2",
+    author_id: "author-11",
+    biography_text:
+      "Elena Richter ist eine erfahrene Schreibtrainerin und Autorin, die sich auf kreatives Schreiben und Storytelling spezialisiert hat. Sie leitet Workshops für angehende Autoren und hat bereits mehrere erfolgreiche Ratgeber zum Thema Schreiben veröffentlicht. Ihre praktische Herangehensweise hilft Anfängern dabei, ihre ersten Romane zu vollenden.",
+
+    language: "Deutsch",
+    is_standard_based: true,
+    standard_biography_id: "bio-author-11-1",
+    created_at: "2024-02-05T10:30:00Z",
+    updated_at: "2024-02-05T10:30:00Z",
+  },
+
+  // Project 3: "Marketing für Kleinunternehmen"
+  {
+    id: "proj-bio-3-author-12",
+    project_id: "3",
+    author_id: "author-12",
+    biography_text:
+      "Dr. Marcus Bauer ist Literaturwissenschaftler an der Universität München und Experte für moderne deutsche Literatur. Er verbindet wissenschaftliche Expertise mit praktischen Schreibtechniken und hat bereits mehrere Fachbücher über Literaturanalyse und Schreibmethoden veröffentlicht. Seine analytischen Fähigkeiten bringt er auch in die Marketingberatung ein.",
+
+    language: "Deutsch",
+    is_standard_based: true,
+    standard_biography_id: "bio-author-12-1",
+    created_at: "2024-02-06T14:15:00Z",
+    updated_at: "2024-02-06T14:15:00Z",
+  },
+  {
+    id: "proj-bio-3-author-6",
+    project_id: "3",
+    author_id: "author-6",
+    biography_text:
+      "Sarah Klein ist eine talentierte Illustratorin, die sich auf Kinderbuch-Illustrationen spezialisiert hat. Ihre farbenfrohen und fantasievollen Zeichnungen haben bereits viele Kinderbücher zum Leben erweckt. Für dieses Marketingbuch erstellt sie anschauliche Grafiken und Diagramme.",
+
+    language: "Deutsch",
+    is_standard_based: true,
+    standard_biography_id: "bio-author-6-1",
+    created_at: "2024-01-20T13:15:00Z",
+    updated_at: "2024-01-20T13:15:00Z",
+  },
+];
+
+// Helper function to get project-specific biographies for a project
+export const getProjectBiographiesForProject = (
+  projectId: string,
+): ProjectBiography[] => {
+  return mockProjectBiographies.filter((bio) => bio.project_id === projectId);
+};
+
+// Helper function to get project-specific biography for an author in a project
+export const getProjectBiographyForAuthor = (
+  projectId: string,
+  authorId: string,
+): ProjectBiography | undefined => {
+  return mockProjectBiographies.find(
+    (bio) => bio.project_id === projectId && bio.author_id === authorId,
+  );
+};
+
+// Helper function to get standard biography for an author
+export const getStandardBiographyForAuthor = (
+  authorId: string,
+): MockAuthorBiography | undefined => {
+  return mockAuthorBiographies.find(
+    (bio) => bio.author_id === authorId && bio.is_standard === true,
+  );
+};
+
+// Helper function to get project-specific biographies for an author
+export const getProjectSpecificBiographiesForAuthor = (
+  authorId: string,
+): ProjectBiography[] => {
+  return mockProjectBiographies.filter((bio) => bio.author_id === authorId);
+};
+
+// Helper function to mark a biography as standard
+export const markBiographyAsStandard = (
+  authorId: string,
+  biographyId: string,
+): void => {
+  // In a real app, this would update the database
+  console.log(
+    `Marking biography ${biographyId} as standard for author ${authorId}`,
+  );
+  // This could update a 'is_standard' flag in the biography record
+};
+
+// Helper function to create project biography from standard
+export const createProjectBiographyFromStandard = (
+  projectId: string,
+  authorId: string,
+  standardBiographyId: string,
+): ProjectBiography => {
+  const standardBio = getBiographiesForAuthor(authorId).find(
+    (bio) => bio.id === standardBiographyId,
+  );
+
+  if (!standardBio) {
+    throw new Error("Standard biography not found");
+  }
+
+  return {
+    id: `proj-bio-${projectId}-${authorId}-${Date.now()}`,
+    project_id: projectId,
+    author_id: authorId,
+    biography_text: standardBio.biography_text,
+
+    language: standardBio.language,
+    is_standard_based: true,
+    standard_biography_id: standardBiographyId,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
 };
 
 // Helper function to search authors by name

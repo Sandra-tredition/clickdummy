@@ -3,6 +3,7 @@ import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { cn } from "@/lib/utils";
 import { Badge } from "./badge";
+import { Button } from "./button";
 
 export interface TreeNode {
   value: string;
@@ -170,6 +171,15 @@ export const TreeSelect = ({
       {isOpen && (
         <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover text-popover-foreground shadow-md">
           <div className="p-1">{renderTreeNodes(options)}</div>
+          <div className="sticky bottom-0 bg-white border-t p-2">
+            <Button
+              size="sm"
+              onClick={() => setIsOpen(false)}
+              className="w-full"
+            >
+              Fertig
+            </Button>
+          </div>
         </div>
       )}
     </div>

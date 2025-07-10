@@ -1,36 +1,4 @@
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Edit,
-  Trash2,
-  BookOpen,
-  Save,
-  X,
-  CalendarIcon,
-  PlusCircle,
-  User,
-  FileText,
-  AlertTriangle,
-  Info,
-  Plus,
-} from "lucide-react";
-import {
-  getBiographiesForAuthor,
-  mockProjectAssignmentsWithBio,
-} from "@/lib/mockData/authors";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format } from "date-fns";
-import { Link, useNavigate } from "react-router-dom";
-import { AuthorForm } from "@/components/Authors/AuthorForm";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import React from "react";
 import {
   Form,
   FormControl,
@@ -50,53 +18,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
-export type ProjectAssignment = {
-  projectId: string;
-  projectTitle: string;
-  authorRole: string;
-};
-
-export type Author = {
-  id: string;
-  authorType: "person" | "organization";
-  firstName?: string;
-  lastName?: string;
-  companyName?: string;
-  isPseudonym?: boolean;
-  isni?: string;
-  profession?: string;
-  company?: string;
-  website?: string;
-  birthDate?: Date | null;
-  deathDate?: Date | null;
-  projects?: ProjectAssignment[];
-  biographiesCount?: number;
-};
-
-interface AuthorListProps {
-  authors: Author[];
-  onEdit: (author: Author) => void;
-  onDelete: (authorId: string) => void;
-  onUpdate: (data: any) => void;
-}
+import { format } from "date-fns";
+import { CalendarIcon, Save, X } from "lucide-react";
 
 // Schema for basic author data editing
 const basicAuthorSchema = z
   .object({
-    authorType: z.enum(["person", "organization"]),
+    authorType: z.enum(["person", "organization"], {
+      errorMap: () => ({ message: "Bitte wähle eine Art des Urhebers aus" }),
+    }),
     isPseudonym: z.boolean().optional(),
     firstName: z.string().optional(),
     lastName: z.string().optional(),
@@ -120,271 +55,40 @@ const basicAuthorSchema = z
     },
     {
       message:
-        "Entweder Nachname (für Personen) oder Firmenname (für Körperschaften) muss angegeben werden",
+        "Bitte gib entweder einen Nachnamen (für Personen) oder den Namen der Körperschaft ein",
       path: ["lastName", "companyName"],
     },
   );
 
-type BasicAuthorFormValues = z.infer<typeof basicAuthorSchema>;
+export type BasicAuthorFormValues = z.infer<typeof basicAuthorSchema>;
 
-// Schema for biography editing
-const biographySchema = z.object({
-  text: z.string().min(1, { message: "Biografie-Text ist erforderlich" }),
-  label: z.string().min(1, { message: "Bezeichnung ist erforderlich" }),
-  language: z.string().min(1, { message: "Sprache ist erforderlich" }),
-});
-
-type BiographyFormValues = z.infer<typeof biographySchema>;
-
-const languageOptions = [
-  { value: "Deutsch", label: "Deutsch" },
-  { value: "English", label: "Englisch" },
-  { value: "Français", label: "Französisch" },
-  { value: "Español", label: "Spanisch" },
-  { value: "Italiano", label: "Italienisch" },
-  { value: "Nederlands", label: "Niederländisch" },
-  { value: "Polski", label: "Polnisch" },
-  { value: "Português", label: "Portugiesisch" },
-  { value: "Русский", label: "Russisch" },
-  { value: "中文", label: "Chinesisch" },
-  { value: "日本語", label: "Japanisch" },
-];
-
-// Helper function to get full language name from language code
-const getLanguageLabel = (languageCode: string): string => {
-  // Handle common language codes that might be stored in the database
-  const languageCodeMap: { [key: string]: string } = {
-    de: "Deutsch",
-    en: "Englisch",
-    fr: "Französisch",
-    es: "Spanisch",
-    it: "Italienisch",
-    nl: "Niederländisch",
-    pl: "Polnisch",
-    pt: "Portugiesisch",
-    ru: "Russisch",
-    zh: "Chinesisch",
-    ja: "Japanisch",
-  };
-
-  // First check if it's a language code
-  if (languageCodeMap[languageCode?.toLowerCase()]) {
-    return languageCodeMap[languageCode.toLowerCase()];
-  }
-
-  // Then check if it's already a full language name
-  const option = languageOptions.find((opt) => opt.value === languageCode);
-  return option ? option.label : languageCode;
+export type Author = {
+  id: string;
+  authorType: "person" | "organization";
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  isPseudonym?: boolean;
+  isni?: string;
+  profession?: string;
+  company?: string;
+  website?: string;
+  birthDate?: Date | null;
+  deathDate?: Date | null;
 };
 
-export function AuthorList({
-  authors,
-  onEdit,
-  onDelete,
-  onUpdate,
-}: AuthorListProps) {
-  const navigate = useNavigate();
-  const [editingAuthor, setEditingAuthor] = useState<string | null>(null);
-  const [editFormData, setEditFormData] = useState<any>(null);
-  const [activeBiographyTab, setActiveBiographyTab] = useState<{
-    [key: string]: string;
-  }>({});
-  const [editingBasicData, setEditingBasicData] = useState<Author | null>(null);
-  // Biography management is now project-specific, not global
-  // Keep only viewing capabilities in author management
-
-  const handleStartEdit = async (author: Author) => {
-    // Get biographies for this author
-    const biographiesData = getBiographiesForAuthor(author.id);
-
-    // Format data for the form
-    const formData = {
-      authorType: author.authorType,
-      firstName: author.firstName || "",
-      lastName: author.lastName || "",
-      companyName: author.companyName || "",
-      isPseudonym: author.isPseudonym || false,
-      birthDate: author.birthDate,
-      deathDate: author.deathDate,
-      isni: author.isni || "",
-      profession: author.profession || "",
-      company: author.company || "",
-      website: author.website || "",
-      additionalInfo: "",
-      biographies:
-        biographiesData && biographiesData.length > 0
-          ? biographiesData.map((bio) => ({
-              text: bio.biography_text,
-              label: bio.biography_label || "Standard",
-              language: bio.language || "Deutsch",
-            }))
-          : [{ text: "", label: "Standard", language: "Deutsch" }],
-    };
-
-    setEditFormData(formData);
-    setEditingAuthor(author.id);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingAuthor(null);
-    setEditFormData(null);
-  };
-
-  const handleSaveEdit = (data: any) => {
-    onUpdate(data);
-    setEditingAuthor(null);
-    setEditFormData(null);
-  };
-
-  const handleEditBasicData = (author: Author) => {
-    setEditingBasicData(author);
-  };
-
-  // Biography editing is now handled in projects only
-  const handleViewBiographies = (author: Author) => {
-    // Navigate to author detail page where biographies are listed
-    navigate(`/authors/${author.id}`);
-  };
-
-  const handleSaveBasicData = async (data: BasicAuthorFormValues) => {
-    if (!editingBasicData) return;
-
-    // Transform data to match the expected format
-    const transformedData = {
-      authorType: data.authorType,
-      firstName: data.firstName || "",
-      lastName: data.lastName || "",
-      companyName: data.companyName || "",
-      isPseudonym: data.isPseudonym || false,
-      birthDate: data.birthDate,
-      deathDate: data.deathDate,
-      isni: data.isni || "",
-      profession: data.profession || "",
-      company: data.company || "",
-      website: data.website || "",
-      additionalInfo: data.additionalInfo || "",
-      biographies: [], // Keep existing biographies
-    };
-
-    onUpdate(transformedData);
-    setEditingBasicData(null);
-  };
-
-  // Biography management moved to project-specific context
-  const handleSetStandardBiography = async (
-    authorId: string,
-    biographyId: string,
-  ) => {
-    // Mark a biography as standard for new projects
-    console.log(
-      `Setting biography ${biographyId} as standard for author ${authorId}`,
-    );
-    // This would update the database to mark the biography as standard
-  };
-
-  // Biography management functions removed - now handled in project context
-
-  return (
-    <div className="space-y-4">
-      {authors.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          Keine Urheber vorhanden
-        </div>
-      ) : (
-        authors.map((author) => (
-          <Card key={author.id} className="w-full border-2 shadow-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CardTitle className="text-lg">
-                    {author.authorType === "person"
-                      ? `${author.lastName}, ${author.firstName || ""}`
-                      : author.companyName}
-                  </CardTitle>
-                  {author.isPseudonym && (
-                    <Badge variant="outline">Pseudonym</Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <BookOpen size={14} />
-                    <span>
-                      {author.projects ? author.projects.length : 0} Projekte
-                    </span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      console.log("Navigating to author detail:", author.id);
-                      navigate(`/authors/${author.id}`);
-                    }}
-                  >
-                    <Edit size={14} className="mr-1 sm:mr-1 text-black" />
-                    <span className="hidden sm:inline text-black">
-                      Bearbeiten
-                    </span>
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        ))
-      )}
-
-      {/* Basic Data Edit Modal */}
-      <Dialog
-        open={!!editingBasicData}
-        onOpenChange={(open) => !open && setEditingBasicData(null)}
-      >
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Grunddaten bearbeiten</DialogTitle>
-            <DialogDescription>
-              Bearbeite die Grunddaten des Urhebers.
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Impact Warning */}
-          {editingBasicData &&
-            editingBasicData.projects &&
-            editingBasicData.projects.length > 0 && (
-              <Alert className="mb-4 border-amber-200 bg-amber-50">
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-amber-800">
-                  <strong>Wichtiger Hinweis:</strong> Änderungen an den
-                  Grunddaten wirken sich auf alle{" "}
-                  {editingBasicData.projects.length} Projekte aus, in denen
-                  dieser Urheber verwendet wird. Die Änderungen werden
-                  automatisch in allen zugeordneten Projekten übernommen.
-                </AlertDescription>
-              </Alert>
-            )}
-
-          {editingBasicData && (
-            <BasicDataForm
-              author={editingBasicData}
-              onSave={handleSaveBasicData}
-              onCancel={() => setEditingBasicData(null)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Biography management moved to project-specific context */}
-    </div>
-  );
-}
-
-// Basic Data Form Component
-const BasicDataForm = ({
-  author,
-  onSave,
-  onCancel,
-}: {
+interface AuthorBasicDataFormProps {
   author: Author;
   onSave: (data: BasicAuthorFormValues) => void;
   onCancel: () => void;
+  showButtons?: boolean;
+}
+
+const AuthorBasicDataForm: React.FC<AuthorBasicDataFormProps> = ({
+  author,
+  onSave,
+  onCancel,
+  showButtons = true,
 }) => {
   const form = useForm<BasicAuthorFormValues>({
     resolver: zodResolver(basicAuthorSchema),
@@ -408,7 +112,11 @@ const BasicDataForm = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSave)} className="space-y-4">
+      <form
+        id="author-form"
+        onSubmit={form.handleSubmit(onSave)}
+        className="space-y-4"
+      >
         <FormField
           control={form.control}
           name="authorType"
@@ -452,7 +160,7 @@ const BasicDataForm = ({
               <FormField
                 control={form.control}
                 name="firstName"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-gray-900">
                       Vorname
@@ -463,14 +171,18 @@ const BasicDataForm = ({
                           placeholder="Vorname"
                           maxLength={120}
                           {...field}
-                          className="pr-16"
+                          className={cn(
+                            "pr-16",
+                            fieldState.error &&
+                              "border-red-500 focus:border-red-500 focus:ring-red-500",
+                          )}
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
                           {field.value?.length || 0}/120
                         </span>
                       </div>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-600" />
                   </FormItem>
                 )}
               />
@@ -478,7 +190,7 @@ const BasicDataForm = ({
               <FormField
                 control={form.control}
                 name="lastName"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-gray-900">
                       Nachname*
@@ -489,14 +201,18 @@ const BasicDataForm = ({
                           placeholder="Nachname"
                           maxLength={120}
                           {...field}
-                          className="pr-16"
+                          className={cn(
+                            "pr-16",
+                            fieldState.error &&
+                              "border-red-500 focus:border-red-500 focus:ring-red-500",
+                          )}
                         />
                         <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
                           {field.value?.length || 0}/120
                         </span>
                       </div>
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage className="text-red-600" />
                   </FormItem>
                 )}
               />
@@ -565,7 +281,7 @@ const BasicDataForm = ({
                         />
                       </PopoverContent>
                     </Popover>
-                    <FormMessage />
+                    <FormMessage className="text-red-600" />
                   </FormItem>
                 )}
               />
@@ -611,7 +327,7 @@ const BasicDataForm = ({
                         />
                       </PopoverContent>
                     </Popover>
-                    <FormMessage />
+                    <FormMessage className="text-red-600" />
                   </FormItem>
                 )}
               />
@@ -620,7 +336,7 @@ const BasicDataForm = ({
             <FormField
               control={form.control}
               name="profession"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-900">
                     Beruf
@@ -631,14 +347,18 @@ const BasicDataForm = ({
                         placeholder="Beruf"
                         maxLength={120}
                         {...field}
-                        className="pr-16"
+                        className={cn(
+                          "pr-16",
+                          fieldState.error &&
+                            "border-red-500 focus:border-red-500 focus:ring-red-500",
+                        )}
                       />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
                         {field.value?.length || 0}/120
                       </span>
                     </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-600" />
                 </FormItem>
               )}
             />
@@ -650,7 +370,7 @@ const BasicDataForm = ({
             <FormField
               control={form.control}
               name="companyName"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-900">
                     Name der Körperschaft*
@@ -661,14 +381,18 @@ const BasicDataForm = ({
                         placeholder="Name der Körperschaft"
                         maxLength={200}
                         {...field}
-                        className="pr-16"
+                        className={cn(
+                          "pr-16",
+                          fieldState.error &&
+                            "border-red-500 focus:border-red-500 focus:ring-red-500",
+                        )}
                       />
                       <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-muted-foreground">
                         {field.value?.length || 0}/200
                       </span>
                     </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-600" />
                 </FormItem>
               )}
             />
@@ -676,19 +400,23 @@ const BasicDataForm = ({
             <FormField
               control={form.control}
               name="additionalInfo"
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-900">
-                    Weiterführende Informationen*
+                    Weiterführende Informationen
                   </FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Weiterführende Informationen zur Körperschaft"
-                      className="resize-none"
+                      className={cn(
+                        "resize-none",
+                        fieldState.error &&
+                          "border-red-500 focus:border-red-500 focus:ring-red-500",
+                      )}
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-600" />
                 </FormItem>
               )}
             />
@@ -699,18 +427,25 @@ const BasicDataForm = ({
           <FormField
             control={form.control}
             name="isni"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
                 <FormLabel className="text-sm font-medium text-gray-900">
                   ISNI
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="ISNI" {...field} />
+                  <Input
+                    placeholder="ISNI"
+                    {...field}
+                    className={cn(
+                      fieldState.error &&
+                        "border-red-500 focus:border-red-500 focus:ring-red-500",
+                    )}
+                  />
                 </FormControl>
                 <FormDescription>
                   International Standard Name Identifier
                 </FormDescription>
-                <FormMessage />
+                <FormMessage className="text-red-600" />
               </FormItem>
             )}
           />
@@ -718,33 +453,42 @@ const BasicDataForm = ({
           <FormField
             control={form.control}
             name="website"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
                 <FormLabel className="text-sm font-medium text-gray-900">
                   Website
                 </FormLabel>
                 <FormControl>
-                  <Input placeholder="https://..." {...field} />
+                  <Input
+                    placeholder="https://..."
+                    {...field}
+                    className={cn(
+                      fieldState.error &&
+                        "border-red-500 focus:border-red-500 focus:ring-red-500",
+                    )}
+                  />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-600" />
               </FormItem>
             )}
           />
         </div>
 
-        <div className="flex gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            <X className="h-4 w-4 mr-2" />
-            Abbrechen
-          </Button>
-          <Button type="submit">
-            <Save className="h-4 w-4 mr-2" />
-            Speichern
-          </Button>
-        </div>
+        {showButtons && (
+          <div className="flex gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              <X className="h-4 w-4 mr-2" />
+              Abbrechen
+            </Button>
+            <Button type="submit">
+              <Save className="h-4 w-4 mr-2" />
+              Speichern
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );
 };
 
-// Biography management moved to project-specific context
+export default AuthorBasicDataForm;

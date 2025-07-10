@@ -12,7 +12,8 @@ export const mockSeries: MockSeries[] = [
   {
     id: "series-1",
     name: "Self-Publishing Ratgeber",
-    description: "Umfassende Ratgeber-Serie für Self-Publisher und Autoren",
+    description:
+      "Umfassende Ratgeber-Serie für Self-Publisher und Autoren, die den gesamten Prozess von der Ideenfindung bis zur Vermarktung abdeckt.",
     project_count: 2,
     created_at: "2024-01-15T10:00:00Z",
     updated_at: "2024-01-15T10:00:00Z",
@@ -20,7 +21,8 @@ export const mockSeries: MockSeries[] = [
   {
     id: "series-2",
     name: "Kreatives Schreiben Kompakt",
-    description: "Praktische Anleitungen für kreatives Schreiben",
+    description:
+      "Praktische Anleitungen für kreatives Schreiben mit Fokus auf Storytelling, Charakterentwicklung und Schreibtechniken.",
     project_count: 2,
     created_at: "2024-01-16T09:30:00Z",
     updated_at: "2024-01-16T09:30:00Z",
@@ -28,45 +30,20 @@ export const mockSeries: MockSeries[] = [
   {
     id: "series-3",
     name: "Business Essentials",
-    description: "Grundlagen für Kleinunternehmer und Startups",
-    project_count: 0,
+    description:
+      "Grundlagen für Kleinunternehmer und Startups - von der Geschäftsidee bis zur erfolgreichen Umsetzung.",
+    project_count: 3,
     created_at: "2024-01-17T14:00:00Z",
     updated_at: "2024-01-17T14:00:00Z",
   },
   {
     id: "mock-series-4",
     name: "Wissenschaftliche Reihe",
+    description:
+      "Akademische Publikationen und Forschungsarbeiten aus verschiedenen wissenschaftlichen Disziplinen.",
     project_count: 4,
     created_at: "2024-01-18T11:20:00Z",
     updated_at: "2024-01-18T11:20:00Z",
-  },
-  {
-    id: "mock-series-5",
-    name: "Kinderbuch-Serie",
-    project_count: 6,
-    created_at: "2024-01-19T16:45:00Z",
-    updated_at: "2024-01-19T16:45:00Z",
-  },
-  {
-    id: "mock-series-6",
-    name: "Historische Romane",
-    project_count: 3,
-    created_at: "2024-01-20T13:15:00Z",
-    updated_at: "2024-01-20T13:15:00Z",
-  },
-  {
-    id: "mock-series-7",
-    name: "Thriller-Collection",
-    project_count: 4,
-    created_at: "2024-01-21T08:30:00Z",
-    updated_at: "2024-01-21T08:30:00Z",
-  },
-  {
-    id: "mock-series-8",
-    name: "Biografien berühmter Persönlichkeiten",
-    project_count: 2,
-    created_at: "2024-01-22T10:00:00Z",
-    updated_at: "2024-01-22T10:00:00Z",
   },
 ];
 

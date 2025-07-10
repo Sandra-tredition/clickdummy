@@ -72,7 +72,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-barlow font-normal;
+    @apply bg-white text-foreground font-barlow font-normal;
     font-size: 1rem;
   }
   h1 {

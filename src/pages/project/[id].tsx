@@ -10,14 +10,29 @@ import ProjectEditForm from "@/components/Project/ProjectEditForm";
 import AddEditionDialog from "@/components/Project/dialogs/AddEditionDialog";
 import AddAuthorDialog from "@/components/Project/dialogs/AddAuthorDialog";
 import NewAuthorDialog from "@/components/Project/dialogs/NewAuthorDialog";
+import PublishingModal from "@/components/Project/dialogs/PublishingModal";
 import ProjectTour from "@/components/Project/ProjectTour";
 import VersionTabs from "@/components/Project/VersionTabs";
 import ComparisonSidebar from "@/components/Project/ComparisonSidebar";
 import EditionTabsSection from "@/components/Project/EditionTabsSection";
-import StickyFooter from "@/components/Project/StickyFooter";
+
 import PublishedOnlyNotice from "@/components/Project/PublishedOnlyNotice";
 import { fetchProjectById } from "@/lib/api/projects";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { TrashIcon } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/components/ui/use-toast";
 
 interface Author {
   id: string;
@@ -485,8 +500,6 @@ const ProjectDetailPage = () => {
                   "non-fiction.marketing",
                   "entrepreneurship",
                 ],
-                series: "series-2",
-                publisher: "Kreativ Verlag",
                 created_at: "2023-10-01T09:30:00Z",
                 updated_at: "2023-12-18T15:45:00Z",
                 user_id: "user-3",
@@ -530,13 +543,13 @@ const ProjectDetailPage = () => {
                   ausgabenart: "Standardausgabe",
                   price: 19.99,
                   pages: 380,
-                  status: "In Bearbeitung",
+                  status: "Bereit zur Veröffentlichung",
                   isbn: "978-3-987654-36-9",
                   cover_image:
                     "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=80",
-                  is_complete: false,
+                  is_complete: true,
                   format_complete: true,
-                  content_complete: false,
+                  content_complete: true,
                   cover_complete: true,
                   pricing_complete: true,
                   authors_complete: true,
@@ -641,6 +654,33 @@ const ProjectDetailPage = () => {
           console.log("Setting mock project data:", mockProject);
           console.log("Setting mock editions data:", mockEditions);
           console.log("Setting mock authors data:", mockAuthors);
+
+          // Set up localStorage data for project 3 to include series and publisher
+          if (id === "3") {
+            const projectData = {
+              selectedSeries: {
+                id: "1",
+                name: "Business Ratgeber Serie",
+                description:
+                  "Eine Serie praktischer Ratgeber für Unternehmer und Selbstständige.",
+                created_at: "2024-01-10T14:00:00Z",
+                updated_at: "2024-01-10T14:00:00Z",
+              },
+              selectedPublisher: {
+                id: "1",
+                name: "Eigenverlag Premium",
+                description:
+                  "Premium Self-Publishing Verlagsmarke für hochwertige Ratgeber und Sachbücher.",
+                website: "https://eigenverlag-premium.de",
+                contact_email: "kontakt@eigenverlag-premium.de",
+                project_count: 2,
+                created_at: "2024-01-10T14:00:00Z",
+                updated_at: "2024-01-10T14:00:00Z",
+              },
+              selectedAuthors: [],
+            };
+            localStorage.setItem(`project_${id}`, JSON.stringify(projectData));
+          }
 
           setProject(mockProject);
           setAuthors(mockAuthors);
@@ -1455,12 +1495,100 @@ const ProjectDetailPage = () => {
           onOpenChange={setIsNewAuthorDialogOpen}
           onAuthorCreated={handleAuthorCreated}
         />
+        <PublishingModal
+          isOpen={isPublishingModalOpen}
+          onOpenChange={setIsPublishingModalOpen}
+          editions={editions}
+          projectTitle={project?.title || "Unbenanntes Projekt"}
+          onPublish={(publishingData) => {
+            console.log("Publishing data:", publishingData);
+            // Here you would typically update the edition statuses
+            // and handle the publishing logic
+
+            // Update edition statuses to published for selected editions
+            setEditions((prevEditions) =>
+              prevEditions.map((edition) =>
+                publishingData.selectedEditions.includes(edition.id)
+                  ? { ...edition, status: "Veröffentlicht" }
+                  : edition,
+              ),
+            );
+          }}
+        />
+
+        {/* Delete Project Button at the end of the page */}
+        <div className="mt-12 pt-8 border-t border-gray-200">
+          <div className="flex justify-end">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="border-red-500 text-red-500 hover:bg-red-50"
+                  size="sm"
+                >
+                  <TrashIcon className="h-4 w-4 mr-2" />
+                  Projekt löschen
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Projekt löschen</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Möchtest du dieses Projekt wirklich löschen? Diese Aktion
+                    kann nicht rückgängig gemacht werden. Alle zugehörigen
+                    Ausgaben und Autorenzuweisungen werden ebenfalls gelöscht.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={async () => {
+                      try {
+                        // Use the deleteProject function from the API library
+                        const { deleteProject } = await import(
+                          "@/lib/api/projects"
+                        );
+                        const { error } = await deleteProject(id || "");
+
+                        if (error) {
+                          console.error("Error deleting project:", error);
+                          toast({
+                            title: "Fehler",
+                            description:
+                              "Das Projekt konnte nicht gelöscht werden.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+
+                        toast({
+                          title: "Erfolg",
+                          description:
+                            "Das Projekt wurde erfolgreich gelöscht.",
+                        });
+
+                        // Redirect to projects list
+                        window.location.href = "/";
+                      } catch (error) {
+                        console.error("Error deleting project:", error);
+                        toast({
+                          title: "Fehler",
+                          description:
+                            "Das Projekt konnte nicht gelöscht werden.",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                    className="bg-red-500 hover:bg-red-600 text-white"
+                  >
+                    Löschen
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
       </div>
-      <StickyFooter
-        isProjectReadyForPublishing={isProjectReadyForPublishing}
-        setIsPublishingModalOpen={setIsPublishingModalOpen}
-        projectId={id || ""}
-      />
     </Layout>
   );
 };

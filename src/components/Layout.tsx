@@ -22,7 +22,7 @@ const Layout = ({ children, title, subtitle, breadcrumbs }: LayoutProps) => {
       <Sidebar />
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        {/* Header with Breadcrumbs and Title - White Background */}
+        {/* Header with Breadcrumbs and Title - Gray Background */}
         <div className="bg-white">
           <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
             {/* Breadcrumbs */}

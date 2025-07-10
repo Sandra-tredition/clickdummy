@@ -93,76 +93,78 @@ const EditionTabs: React.FC<EditionTabsProps> = ({
   calculateCommission,
 }) => {
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid grid-cols-3 mb-8">
-        <TabsTrigger
-          value="print-properties"
-          className="flex items-center gap-2"
-        >
-          <FileTextIcon className="h-4 w-4" />
-          Inhalt
-        </TabsTrigger>
-        <TabsTrigger value="cover" className="flex items-center gap-2">
-          <BookIcon className="h-4 w-4" />
-          Cover
-        </TabsTrigger>
-        <TabsTrigger value="pricing" className="flex items-center gap-2">
-          <EuroIcon className="h-4 w-4" />
-          Preis
-        </TabsTrigger>
-      </TabsList>
+    <div className="border-b border-gray-200 pb-4 mb-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-3 mb-8">
+          <TabsTrigger
+            value="print-properties"
+            className="flex items-center gap-2"
+          >
+            <FileTextIcon className="h-4 w-4" />
+            Inhalt
+          </TabsTrigger>
+          <TabsTrigger value="cover" className="flex items-center gap-2">
+            <BookIcon className="h-4 w-4" />
+            Cover
+          </TabsTrigger>
+          <TabsTrigger value="pricing" className="flex items-center gap-2">
+            <EuroIcon className="h-4 w-4" />
+            Preis
+          </TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="print-properties" className="space-y-6">
-        <ContentTab
-          contentUploaded={contentUploaded}
-          selectedFormat={selectedFormat}
-          selectedPaperType={selectedPaperType}
-          selectedCoverFinish={selectedCoverFinish}
-          selectedSpineType={selectedSpineType}
-          customWidth={customWidth}
-          customHeight={customHeight}
-          customFormatError={customFormatError}
-          setCustomWidth={setCustomWidth}
-          setCustomHeight={setCustomHeight}
-          validateCustomFormat={validateCustomFormat}
-          handleContentUpload={handleContentUpload}
-          setContentUploaded={setContentUploaded}
-          setContentFile={setContentFile}
-          setTotalPages={setTotalPages}
-          setColorPages={setColorPages}
-          formatError={formatError}
-          contentFile={contentFile}
-          totalPages={totalPages}
-          priceImpact={priceImpact}
-          minimumPrice={minimumPrice}
-          enableSampleReading={enableSampleReading}
-          setEnableSampleReading={setEnableSampleReading}
-        />
-      </TabsContent>
+        <TabsContent value="print-properties" className="space-y-6">
+          <ContentTab
+            contentUploaded={contentUploaded}
+            selectedFormat={selectedFormat}
+            selectedPaperType={selectedPaperType}
+            selectedCoverFinish={selectedCoverFinish}
+            selectedSpineType={selectedSpineType}
+            customWidth={customWidth}
+            customHeight={customHeight}
+            customFormatError={customFormatError}
+            setCustomWidth={setCustomWidth}
+            setCustomHeight={setCustomHeight}
+            validateCustomFormat={validateCustomFormat}
+            handleContentUpload={handleContentUpload}
+            setContentUploaded={setContentUploaded}
+            setContentFile={setContentFile}
+            setTotalPages={setTotalPages}
+            setColorPages={setColorPages}
+            formatError={formatError}
+            contentFile={contentFile}
+            totalPages={totalPages}
+            priceImpact={priceImpact}
+            minimumPrice={minimumPrice}
+            enableSampleReading={enableSampleReading}
+            setEnableSampleReading={setEnableSampleReading}
+          />
+        </TabsContent>
 
-      <TabsContent value="cover" className="space-y-6">
-        <CoverTab
-          coverUploaded={coverUploaded}
-          coverFile={coverFile}
-          handleCoverUpload={handleCoverUpload}
-          setCoverUploaded={setCoverUploaded}
-          setCoverFile={setCoverFile}
-        />
-      </TabsContent>
+        <TabsContent value="cover" className="space-y-6">
+          <CoverTab
+            coverUploaded={coverUploaded}
+            coverFile={coverFile}
+            handleCoverUpload={handleCoverUpload}
+            setCoverUploaded={setCoverUploaded}
+            setCoverFile={setCoverFile}
+          />
+        </TabsContent>
 
-      <TabsContent value="pricing" className="space-y-6">
-        <PricingTab
-          contentUploaded={contentUploaded}
-          minimumPrice={minimumPrice}
-          sellingPrice={sellingPrice}
-          setSellingPrice={setSellingPrice}
-          authorCommission={authorCommission}
-          calculateCommission={calculateCommission}
-          totalPages={totalPages}
-          priceImpact={priceImpact}
-        />
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="pricing" className="space-y-6">
+          <PricingTab
+            contentUploaded={contentUploaded}
+            minimumPrice={minimumPrice}
+            sellingPrice={sellingPrice}
+            setSellingPrice={setSellingPrice}
+            authorCommission={authorCommission}
+            calculateCommission={calculateCommission}
+            totalPages={totalPages}
+            priceImpact={priceImpact}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

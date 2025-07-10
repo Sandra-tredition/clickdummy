@@ -40,6 +40,8 @@ import {
 } from "@/lib/api/series";
 import { Tables } from "@/types/supabase";
 import { Link } from "react-router-dom";
+import EntityCreationModal from "@/components/Project/dialogs/EntityCreationModal";
+import { mockSeries } from "@/lib/mockData/series";
 
 type SeriesWithCount = Tables<"series">;
 type Project = { id: string; title: string };
@@ -53,8 +55,11 @@ const SeriesPage = ({ isEmbedded = false }: SeriesProps = {}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [newSeriesName, setNewSeriesName] = useState("");
+  const [newSeriesDescription, setNewSeriesDescription] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEntityModalOpen, setIsEntityModalOpen] = useState(false);
   const [editingSeriesId, setEditingSeriesId] = useState<string | null>(null);
+  const [editingSeriesData, setEditingSeriesData] = useState<any>(null);
   const [seriesProjects, setSeriesProjects] = useState<
     Record<string, Project[]>
   >({});
@@ -84,17 +89,7 @@ const SeriesPage = ({ isEmbedded = false }: SeriesProps = {}) => {
         const { data, error } = await fetchAllSeries();
         if (error) throw error;
 
-        // Add mock series data for demonstration
-        const mockSeries = [
-          {
-            id: "mock-series-1",
-            name: "Fantasy-Saga",
-            project_count: 2,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ];
-
+        // Use mock series data for demonstration
         setSeries([...mockSeries, ...(data || [])]);
       } catch (err: any) {
         console.error("Error loading series:", err);
@@ -121,13 +116,46 @@ const SeriesPage = ({ isEmbedded = false }: SeriesProps = {}) => {
           setSeriesProjects({ ...seriesProjects, [seriesId]: [] });
         } else {
           // Add mock data for demonstration
-          if (seriesId === "mock-series-1") {
+          const mockProjectsData: Record<
+            string,
+            { id: string; title: string }[]
+          > = {
+            "series-1": [
+              { id: "mock-project-1", title: "Self-Publishing für Einsteiger" },
+              { id: "mock-project-2", title: "Erfolgreich vermarkten" },
+            ],
+            "series-2": [
+              { id: "mock-project-3", title: "Charaktere entwickeln" },
+              { id: "mock-project-4", title: "Dialoge schreiben" },
+            ],
+            "series-3": [
+              { id: "mock-project-15", title: "Startup Grundlagen" },
+              { id: "mock-project-16", title: "Businessplan erstellen" },
+              {
+                id: "mock-project-17",
+                title: "Marketing für Kleinunternehmer",
+              },
+            ],
+            "mock-series-4": [
+              { id: "mock-project-5", title: "Forschungsmethoden" },
+              { id: "mock-project-6", title: "Wissenschaftliches Schreiben" },
+              { id: "mock-project-7", title: "Datenanalyse" },
+              { id: "mock-project-8", title: "Publikationsstrategien" },
+            ],
+            "mock-series-5": [
+              { id: "mock-project-9", title: "Der kleine Drache" },
+              { id: "mock-project-10", title: "Abenteuer im Zauberwald" },
+              { id: "mock-project-11", title: "Die mutigen Freunde" },
+              { id: "mock-project-12", title: "Geschichten vom Meer" },
+              { id: "mock-project-13", title: "Tiere des Waldes" },
+              { id: "mock-project-14", title: "Märchen für Kinder" },
+            ],
+          };
+
+          if (mockProjectsData[seriesId]) {
             setSeriesProjects({
               ...seriesProjects,
-              [seriesId]: [
-                { id: "mock-project-1", title: "Die Geheimnisse des Waldes" },
-                { id: "mock-project-2", title: "Der letzte Magier" },
-              ],
+              [seriesId]: mockProjectsData[seriesId],
             });
           } else {
             const { data, error } = await fetchProjectsBySeries(seriesId);
@@ -148,6 +176,7 @@ const SeriesPage = ({ isEmbedded = false }: SeriesProps = {}) => {
       try {
         const seriesData = {
           name: newSeriesName,
+          description: newSeriesDescription,
           ...(editingSeriesId ? {} : { project_count: 0 }),
         };
 
@@ -181,14 +210,18 @@ const SeriesPage = ({ isEmbedded = false }: SeriesProps = {}) => {
 
   const resetForm = () => {
     setNewSeriesName("");
+    setNewSeriesDescription("");
     setEditingSeriesId(null);
     setIsDialogOpen(false);
   };
 
   const handleEditSeries = (item: SeriesWithCount) => {
     setEditingSeriesId(item.id);
-    setNewSeriesName(item.name);
-    setIsDialogOpen(true);
+    setEditingSeriesData({
+      name: item.name,
+      description: item.description || "",
+    });
+    setIsEntityModalOpen(true);
   };
 
   const handleRemoveProjectFromSeries = async (
@@ -247,6 +280,11 @@ const SeriesPage = ({ isEmbedded = false }: SeriesProps = {}) => {
     <div className="max-w-full">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Buchreihen</h1>
+        <Button onClick={() => setIsEntityModalOpen(true)}>
+          <PlusCircle size={18} className="mr-2" />
+          Neue Buchreihe anlegen
+        </Button>
+
         <Dialog
           open={isDialogOpen}
           onOpenChange={(open) => {
@@ -254,12 +292,6 @@ const SeriesPage = ({ isEmbedded = false }: SeriesProps = {}) => {
             setIsDialogOpen(open);
           }}
         >
-          <DialogTrigger asChild>
-            <Button>
-              <PlusCircle size={18} className="mr-2" />
-              Neue Buchreihe anlegen
-            </Button>
-          </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
@@ -274,16 +306,27 @@ const SeriesPage = ({ isEmbedded = false }: SeriesProps = {}) => {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  Name
-                </Label>
-                <Input
-                  id="name"
-                  value={newSeriesName}
-                  onChange={(e) => setNewSeriesName(e.target.value)}
-                  className="col-span-3"
-                />
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Name der Buchreihe *</Label>
+                  <Input
+                    id="name"
+                    value={newSeriesName}
+                    onChange={(e) => setNewSeriesName(e.target.value)}
+                    placeholder="Name der Buchreihe"
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="description">Beschreibung</Label>
+                  <Input
+                    id="description"
+                    value={newSeriesDescription}
+                    onChange={(e) => setNewSeriesDescription(e.target.value)}
+                    placeholder="Beschreibung der Buchreihe"
+                    className="mt-2"
+                  />
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -311,10 +354,22 @@ const SeriesPage = ({ isEmbedded = false }: SeriesProps = {}) => {
                 <AccordionItem value={item.id} className="border-0">
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-4 min-h-[60px]">
-                      <AccordionTrigger className="hover:no-underline flex-shrink-0 self-center"></AccordionTrigger>
+                      <AccordionTrigger
+                        className="hover:no-underline flex-shrink-0 self-center"
+                        onClick={() => loadSeriesProjects(item.id)}
+                      ></AccordionTrigger>
                       <div className="flex items-center justify-between w-full self-center">
-                        <div className="flex items-center gap-3">
-                          <CardTitle className="text-lg">{item.name}</CardTitle>
+                        <div className="flex items-center gap-3 flex-1">
+                          <div>
+                            <CardTitle className="text-lg">
+                              {item.name}
+                            </CardTitle>
+                            {item.description && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {item.description}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-6 mr-4">
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -435,6 +490,48 @@ const SeriesPage = ({ isEmbedded = false }: SeriesProps = {}) => {
           </Button>
         </div>
       )}
+
+      <EntityCreationModal
+        isOpen={isEntityModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingSeriesId(null);
+            setEditingSeriesData(null);
+          }
+          setIsEntityModalOpen(open);
+        }}
+        entityType="series"
+        existingEntities={[]}
+        directCreateMode={true}
+        editingData={editingSeriesData}
+        onComplete={(mode, data) => {
+          if (mode === "new") {
+            if (editingSeriesId) {
+              // Update existing series
+              setSeries((prev) =>
+                prev.map((s) =>
+                  s.id === editingSeriesId
+                    ? { ...s, name: data.name, description: data.description }
+                    : s,
+                ),
+              );
+            } else {
+              // Create new series
+              const newSeries = {
+                id: `temp-series-${Date.now()}`,
+                name: data.name,
+                description: data.description,
+                project_count: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+              setSeries([...series, newSeries]);
+            }
+          }
+          setEditingSeriesId(null);
+          setEditingSeriesData(null);
+        }}
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

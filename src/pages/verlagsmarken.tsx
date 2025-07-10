@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/accordion";
 import { PlusCircle, Edit, Trash2, Book } from "lucide-react";
 import { Link } from "react-router-dom";
+import EntityCreationModal from "@/components/Project/dialogs/EntityCreationModal";
+import { mockVerlagsmarken } from "@/lib/mockData/verlagsmarken";
 
 interface Verlagsmarke {
   id: string;
@@ -47,28 +49,7 @@ const Verlagsmarken = ({ isEmbedded = false }: VerlagsmarkenProps = {}) => {
   const isCleanUser = currentUser?.email === "clean@example.com";
 
   const [verlagsmarken, setVerlagsmarken] = useState<Verlagsmarke[]>(
-    isCleanUser
-      ? []
-      : [
-          {
-            id: "1",
-            name: "Beispiel Verlag",
-            description:
-              "Ein Beispielverlag für die Demonstration der Plattform.",
-            website: "https://beispielverlag.de",
-            contact_email: "kontakt@beispielverlag.de",
-            project_count: 2,
-          },
-          {
-            id: "2",
-            name: "Literatur Verlag",
-            description:
-              "Spezialisiert auf literarische Werke und Belletristik.",
-            website: "https://literaturverlag.de",
-            contact_email: "info@literaturverlag.de",
-            project_count: 1,
-          },
-        ],
+    isCleanUser ? [] : mockVerlagsmarken,
   );
 
   // Mock data for projects assigned to Verlagsmarken
@@ -77,20 +58,28 @@ const Verlagsmarken = ({ isEmbedded = false }: VerlagsmarkenProps = {}) => {
       ? {}
       : {
           "1": [
-            { id: "1", title: "Beispielprojekt", status: "Draft" },
-            { id: "2", title: "Mein Roman", status: "Published" },
+            { id: "1", title: "Self-Publishing Masterclass", status: "Draft" },
+            { id: "2", title: "Ratgeber für Autoren", status: "Published" },
           ],
-          "2": [{ id: "3", title: "Literarisches Werk", status: "In Review" }],
+          "2": [
+            {
+              id: "3",
+              title: "Kreatives Schreiben lernen",
+              status: "In Review",
+            },
+            { id: "4", title: "Storytelling Techniken", status: "Published" },
+          ],
         },
   );
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEntityModalOpen, setIsEntityModalOpen] = useState(false);
   const [editingMarke, setEditingMarke] = useState<Verlagsmarke | null>(null);
+  const [editingMarkeData, setEditingMarkeData] = useState<any>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     website: "",
-    contact_email: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -114,18 +103,16 @@ const Verlagsmarken = ({ isEmbedded = false }: VerlagsmarkenProps = {}) => {
 
     setIsDialogOpen(false);
     setEditingMarke(null);
-    setFormData({ name: "", description: "", website: "", contact_email: "" });
+    setFormData({ name: "", description: "", website: "" });
   };
 
   const handleEdit = (marke: Verlagsmarke) => {
     setEditingMarke(marke);
-    setFormData({
+    setEditingMarkeData({
       name: marke.name,
       description: marke.description,
-      website: marke.website || "",
-      contact_email: marke.contact_email || "",
     });
-    setIsDialogOpen(true);
+    setIsEntityModalOpen(true);
   };
 
   const handleDelete = (id: string) => {
@@ -134,7 +121,7 @@ const Verlagsmarken = ({ isEmbedded = false }: VerlagsmarkenProps = {}) => {
 
   const openNewDialog = () => {
     setEditingMarke(null);
-    setFormData({ name: "", description: "", website: "", contact_email: "" });
+    setFormData({ name: "", description: "", website: "" });
     setIsDialogOpen(true);
   };
 
@@ -142,13 +129,15 @@ const Verlagsmarken = ({ isEmbedded = false }: VerlagsmarkenProps = {}) => {
     <div className="max-w-full">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Verlagsmarken</h1>
+        <Button
+          onClick={() => setIsEntityModalOpen(true)}
+          className="flex items-center gap-2"
+        >
+          <PlusCircle size={16} />
+          Neue Verlagsmarke
+        </Button>
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNewDialog} className="flex items-center gap-2">
-              <PlusCircle size={16} />
-              Neue Verlagsmarke
-            </Button>
-          </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>
@@ -198,20 +187,7 @@ const Verlagsmarken = ({ isEmbedded = false }: VerlagsmarkenProps = {}) => {
                   }
                 />
               </div>
-              <div>
-                <Label htmlFor="contact_email">Kontakt E-Mail</Label>
-                <Input
-                  id="contact_email"
-                  type="email"
-                  value={formData.contact_email}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      contact_email: e.target.value,
-                    }))
-                  }
-                />
-              </div>
+
               <div className="flex justify-end gap-2 pt-4">
                 <Button
                   type="button"
@@ -238,65 +214,38 @@ const Verlagsmarken = ({ isEmbedded = false }: VerlagsmarkenProps = {}) => {
                   <div className="flex items-center gap-4 min-h-[60px]">
                     <AccordionTrigger className="hover:no-underline flex-shrink-0 self-center"></AccordionTrigger>
                     <div className="flex items-center justify-between w-full self-center">
-                      <div className="flex items-center gap-3">
-                        <CardTitle className="text-lg">{marke.name}</CardTitle>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div>
+                          <CardTitle className="text-lg">
+                            {marke.name}
+                          </CardTitle>
+                          {marke.description && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {marke.description}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-6 text-sm text-muted-foreground mr-4">
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-6 mr-4">
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
                           <Book size={14} />
                           <span>{marke.project_count || 0} Projekte</span>
                         </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(marke)}
+                        >
+                          <Edit size={14} className="mr-1 sm:mr-1" />
+                          <span className="hidden sm:inline">Bearbeiten</span>
+                        </Button>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
                 <AccordionContent>
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 bg-transparent">
                     <div className="space-y-6">
-                      {/* Grunddaten Section */}
-                      <div className="space-y-4">
-                        <div className="relative flex items-center justify-between rounded-lg border p-4">
-                          <div className="flex items-center gap-4">
-                            <div className="flex h-10 w-16 items-center justify-center rounded bg-slate-100">
-                              <Book size={16} />
-                            </div>
-                            <div>
-                              <p className="font-medium">{marke.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {marke.description}
-                              </p>
-                              {marke.website && (
-                                <a
-                                  href={marke.website}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-sm text-black underline decoration-2 decoration-primary-green hover:decoration-4 transition-all"
-                                >
-                                  {marke.website}
-                                </a>
-                              )}
-                              {marke.contact_email && (
-                                <p className="text-sm text-muted-foreground">
-                                  {marke.contact_email}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(marke)}
-                            >
-                              <Edit size={14} className="mr-1 sm:mr-1" />
-                              <span className="hidden sm:inline">
-                                Bearbeiten
-                              </span>
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
                       {/* Zugeordnete Projekte Section */}
                       <div className="space-y-4">
                         <div className="relative rounded-lg border p-4">
@@ -378,6 +327,46 @@ const Verlagsmarken = ({ isEmbedded = false }: VerlagsmarkenProps = {}) => {
           </Button>
         </div>
       )}
+
+      <EntityCreationModal
+        isOpen={isEntityModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingMarke(null);
+            setEditingMarkeData(null);
+          }
+          setIsEntityModalOpen(open);
+        }}
+        entityType="publisher"
+        existingEntities={[]}
+        directCreateMode={true}
+        editingData={editingMarkeData}
+        onComplete={(mode, data) => {
+          if (mode === "new") {
+            if (editingMarke) {
+              // Update existing verlagsmarke
+              setVerlagsmarken((prev) =>
+                prev.map((m) =>
+                  m.id === editingMarke.id
+                    ? { ...m, name: data.name, description: data.description }
+                    : m,
+                ),
+              );
+            } else {
+              // Create new verlagsmarke
+              const newMarke: Verlagsmarke = {
+                id: `temp-publisher-${Date.now()}`,
+                name: data.name,
+                description: data.description,
+                project_count: 0,
+              };
+              setVerlagsmarken((prev) => [...prev, newMarke]);
+            }
+          }
+          setEditingMarke(null);
+          setEditingMarkeData(null);
+        }}
+      />
     </div>
   );
 

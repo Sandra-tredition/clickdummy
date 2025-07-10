@@ -4,11 +4,19 @@ import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Receipt, Download } from "lucide-react";
+import {
+  ArrowLeft,
+  MapPin,
+  Receipt,
+  Download,
+  AlertTriangle,
+} from "lucide-react";
+import ReturnRequestModal from "@/components/Account/ReturnRequestModal";
 
 const OrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [isReturnModalOpen, setIsReturnModalOpen] = React.useState(false);
 
   // Mock data - in real app, fetch based on ID
   const mockOrders = [
@@ -37,6 +45,8 @@ const OrderDetail = () => {
           author: "Max Mustermann",
           quantity: 1,
           price: "24,99 €",
+          coverImage:
+            "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&q=80",
           trackingNumber: "DHL123456789",
           carrier: "DHL",
           trackingUrl:
@@ -47,6 +57,8 @@ const OrderDetail = () => {
           author: "Anna Schmidt",
           quantity: 2,
           price: "52,50 €",
+          coverImage:
+            "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400&q=80",
           trackingNumber: "DPD987654321",
           carrier: "DPD",
           trackingUrl: "https://tracking.dpd.de/status/de_DE/parcel/987654321",
@@ -79,6 +91,8 @@ const OrderDetail = () => {
           author: "Peter Weber",
           quantity: 1,
           price: "39,99 €",
+          coverImage:
+            "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&q=80",
           trackingNumber: null,
           carrier: null,
           trackingUrl: null,
@@ -88,6 +102,8 @@ const OrderDetail = () => {
           author: "Lisa Müller",
           quantity: 1,
           price: "39,51 €",
+          coverImage:
+            "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&q=80",
           trackingNumber: null,
           carrier: null,
           trackingUrl: null,
@@ -120,6 +136,8 @@ const OrderDetail = () => {
           author: "Dr. Thomas Klein",
           quantity: 1,
           price: "199,99 €",
+          coverImage:
+            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
           trackingNumber: "UPS456789123",
           carrier: "UPS",
           trackingUrl: "https://www.ups.com/track?loc=de_DE&tracknum=456789123",
@@ -232,40 +250,56 @@ const OrderDetail = () => {
           Zurück zu den Bestellungen
         </Button>
 
-        {/* Tracking Summary - Prominently at the top */}
+        {/* Action Buttons - Right-aligned */}
+        <div className="flex flex-col sm:flex-row gap-3 p-4 bg-gray-50 rounded-lg border sm:justify-end">
+          <Button variant="outline" className="w-full sm:w-auto">
+            <Receipt size={16} className="mr-2" />
+            Rechnung herunterladen
+          </Button>
+          {order.status === "Delivered" && (
+            <Button
+              variant="outline"
+              onClick={() => setIsReturnModalOpen(true)}
+              className="border-orange-500 text-orange-600 hover:bg-orange-50 w-full sm:w-auto"
+            >
+              <AlertTriangle size={16} className="mr-2" />
+              Bestellung reklamieren
+            </Button>
+          )}
+        </div>
+
+        {/* Tracking Summary - More subtle display */}
         {order.items.some((item: any) => item.trackingNumber) && (
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader>
-              <CardTitle className="text-green-900 flex items-center gap-2">
-                <MapPin size={20} className="text-green-600" />
-                Sendungsverfolgung
-              </CardTitle>
-              <p className="text-green-700 text-sm">
-                Hier findest du alle Tracking-Informationen für deine Bestellung
-              </p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+          <Card className="border-gray-200">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin size={16} className="text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">
+                  Sendungsverfolgung
+                </span>
+              </div>
+              <div className="space-y-2">
                 {order.items
                   .filter((item: any) => item.trackingNumber)
                   .map((item: any, index: number) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-4 bg-white rounded-lg border border-green-200"
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
                     >
                       <div>
-                        <p className="font-medium text-green-900">
+                        <p className="text-sm font-medium text-gray-900">
                           {item.carrier}
                         </p>
-                        <p className="text-green-700 text-sm">
+                        <p className="text-sm text-gray-600">
                           Tracking-Nummer: {item.trackingNumber}
                         </p>
                       </div>
                       <Button
+                        size="sm"
+                        variant="outline"
                         onClick={() => window.open(item.trackingUrl, "_blank")}
-                        className="bg-green-600 hover:bg-green-700 text-white"
                       >
-                        Sendung verfolgen
+                        Verfolgen
                       </Button>
                     </div>
                   ))}
@@ -369,7 +403,17 @@ const OrderDetail = () => {
           <CardContent className="space-y-4">
             {order.items.map((item: any, index: number) => (
               <div key={index} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start mb-3">
+                <div className="flex gap-4 items-start">
+                  {/* Book Cover */}
+                  <div className="flex-shrink-0">
+                    <img
+                      src={item.coverImage}
+                      alt={`Cover von ${item.title}`}
+                      className="w-20 h-28 object-cover rounded-md border shadow-sm"
+                    />
+                  </div>
+
+                  {/* Book Details */}
                   <div className="flex-1">
                     <h4 className="font-medium text-lg">{item.title}</h4>
                     <p className="text-gray-600">von {item.author}</p>
@@ -382,23 +426,12 @@ const OrderDetail = () => {
             ))}
           </CardContent>
         </Card>
-
-        {/* Actions */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-4">
-              <Button variant="outline">
-                <Receipt size={16} className="mr-2" />
-                Rechnung herunterladen
-              </Button>
-              <Button variant="outline">
-                <Download size={16} className="mr-2" />
-                Bestellbestätigung
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
+
+      <ReturnRequestModal
+        isOpen={isReturnModalOpen}
+        onOpenChange={setIsReturnModalOpen}
+      />
     </Layout>
   );
 };

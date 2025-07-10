@@ -25,6 +25,7 @@ const Home = () => {
   const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [workingTitle, setWorkingTitle] = useState("");
+  const [selectedSubtitle, setSelectedSubtitle] = useState("");
 
   // State for projects - will be loaded from database
   const [projects, setProjects] = useState<any[]>([]);
@@ -200,6 +201,7 @@ const Home = () => {
       frontendProjects[uniqueId] = {
         id: uniqueId,
         title: workingTitle || "Neues Buchprojekt",
+        subtitle: selectedSubtitle || "",
         description: "Ein neues Buchprojekt, das gerade erstellt wurde.",
         cover_image:
           "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=800&q=80",
@@ -233,6 +235,7 @@ const Home = () => {
 
       // Reset the form
       setWorkingTitle("");
+      setSelectedSubtitle("");
       setSelectedLanguages(["Deutsch"]);
 
       // Navigate to the project detail page with tour parameter
@@ -340,32 +343,43 @@ const Home = () => {
                   Neues Buchprojekt anlegen
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
                   <DialogTitle>Neues Buchprojekt anlegen</DialogTitle>
                   <DialogDescription>
-                    Geben Sie einen Arbeitstitel für Ihr neues Buchprojekt ein.
+                    Gib die Grunddaten für dein neues Buchprojekt ein. Diese
+                    können später jederzeit geändert werden.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="workingTitle" className="text-right">
-                      Arbeitstitel
-                    </Label>
-                    <Input
-                      id="workingTitle"
-                      value={workingTitle}
-                      onChange={(e) => setWorkingTitle(e.target.value)}
-                      className="col-span-3"
-                      placeholder="Neues Buchprojekt"
-                      autoFocus
-                    />
+                <div className="space-y-6 py-4">
+                  {/* Title and Subtitle */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="workingTitle">Titel</Label>
+                      <Input
+                        id="workingTitle"
+                        value={workingTitle}
+                        onChange={(e) => setWorkingTitle(e.target.value)}
+                        placeholder="Neues Buchprojekt"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subtitle">Untertitel (optional)</Label>
+                      <Input
+                        id="subtitle"
+                        name="subtitle"
+                        value={selectedSubtitle}
+                        onChange={(e) => setSelectedSubtitle(e.target.value)}
+                        placeholder="Untertitel eingeben"
+                      />
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <div className="flex items-center gap-2 justify-end">
-                      <Label htmlFor="languages" className="text-right">
-                        Sprache(n)
-                      </Label>
+
+                  {/* Languages */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="languages">Sprache(n)</Label>
                       <div className="relative group">
                         <AlertCircleIcon className="h-4 w-4 text-muted-foreground cursor-help" />
                         <div className="invisible group-hover:visible absolute z-50 p-2 bg-black text-white text-xs rounded w-64 -top-2 left-6">
@@ -375,34 +389,32 @@ const Home = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="col-span-3">
-                      <MultiSelect
-                        options={[
-                          { value: "Deutsch", label: "Deutsch" },
-                          { value: "English", label: "Englisch" },
-                          { value: "Français", label: "Französisch" },
-                          { value: "Español", label: "Spanisch" },
-                          { value: "Italiano", label: "Italienisch" },
-                          { value: "Nederlands", label: "Niederländisch" },
-                          { value: "Polski", label: "Polnisch" },
-                          { value: "Português", label: "Portugiesisch" },
-                          { value: "Русский", label: "Russisch" },
-                          { value: "中文", label: "Chinesisch" },
-                          { value: "日本語", label: "Japanisch" },
-                        ]}
-                        selected={
-                          Array.isArray(selectedLanguages)
-                            ? selectedLanguages
-                            : []
-                        }
-                        onChange={(values) => {
-                          setSelectedLanguages(
-                            Array.isArray(values) ? values : [],
-                          );
-                        }}
-                        placeholder="Sprachen auswählen"
-                      />
-                    </div>
+                    <MultiSelect
+                      options={[
+                        { value: "Deutsch", label: "Deutsch" },
+                        { value: "English", label: "Englisch" },
+                        { value: "Français", label: "Französisch" },
+                        { value: "Español", label: "Spanisch" },
+                        { value: "Italiano", label: "Italienisch" },
+                        { value: "Nederlands", label: "Niederländisch" },
+                        { value: "Polski", label: "Polnisch" },
+                        { value: "Português", label: "Portugiesisch" },
+                        { value: "Русский", label: "Russisch" },
+                        { value: "中文", label: "Chinesisch" },
+                        { value: "日本語", label: "Japanisch" },
+                      ]}
+                      selected={
+                        Array.isArray(selectedLanguages)
+                          ? selectedLanguages
+                          : []
+                      }
+                      onChange={(values) => {
+                        setSelectedLanguages(
+                          Array.isArray(values) ? values : [],
+                        );
+                      }}
+                      placeholder="Sprachen auswählen"
+                    />
                   </div>
                 </div>
                 <DialogFooter>

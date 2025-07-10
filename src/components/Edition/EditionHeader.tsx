@@ -15,7 +15,7 @@ const EditionHeader: React.FC<EditionHeaderProps> = ({
 }) => {
   return (
     <Card className="mb-8">
-      <CardHeader>
+      <CardHeader className="border-b border-gray-200">
         <CardTitle className="flex items-center justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">

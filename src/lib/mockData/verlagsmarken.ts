@@ -5,7 +5,6 @@ export interface MockVerlagsmarke {
   description: string;
   logo?: string;
   website?: string;
-  contact_email?: string;
   project_count?: number;
   created_at: string;
   updated_at: string;
@@ -13,86 +12,24 @@ export interface MockVerlagsmarke {
 
 export const mockVerlagsmarken: MockVerlagsmarke[] = [
   {
-    id: "verlag-1",
+    id: "1",
     name: "Eigenverlag Premium",
     description:
-      "Premium Self-Publishing Verlagsmarke für hochwertige Ratgeber und Sachbücher.",
+      "Premium Self-Publishing Verlagsmarke für hochwertige Ratgeber und Sachbücher mit professionellem Layout und Marketing-Support.",
     website: "https://eigenverlag-premium.de",
-    contact_email: "kontakt@eigenverlag-premium.de",
     project_count: 2,
     created_at: "2024-01-10T14:00:00Z",
     updated_at: "2024-01-10T14:00:00Z",
   },
   {
-    id: "verlag-2",
+    id: "2",
     name: "Kreativ Verlag",
     description:
-      "Spezialisiert auf kreative Schreibratgeber und Storytelling-Bücher.",
+      "Spezialisiert auf kreative Schreibratgeber und Storytelling-Bücher für angehende Autoren und Kreative.",
     website: "https://kreativverlag.de",
-    contact_email: "info@kreativverlag.de",
     project_count: 2,
     created_at: "2024-01-11T09:30:00Z",
     updated_at: "2024-01-11T09:30:00Z",
-  },
-  {
-    id: "verlag-3",
-    name: "Business Verlag",
-    description: "Fachverlag für Business- und Marketing-Publikationen.",
-    website: "https://businessverlag.de",
-    contact_email: "redaktion@businessverlag.de",
-    project_count: 0,
-    created_at: "2024-01-12T16:45:00Z",
-    updated_at: "2024-01-12T16:45:00Z",
-  },
-  {
-    id: "verlag-4",
-    name: "Kinderbuchverlag",
-    description: "Spezialisiert auf Kinder- und Jugendbücher.",
-    website: "https://kinderbuchverlag.de",
-    contact_email: "lektorat@kinderbuchverlag.de",
-    project_count: 25,
-    created_at: "2024-01-13T11:20:00Z",
-    updated_at: "2024-01-13T11:20:00Z",
-  },
-  {
-    id: "verlag-5",
-    name: "Ratgeber Verlag",
-    description: "Praktische Ratgeber für alle Lebensbereiche.",
-    website: "https://ratgeberverlag.de",
-    contact_email: "info@ratgeberverlag.de",
-    project_count: 18,
-    created_at: "2024-01-14T13:15:00Z",
-    updated_at: "2024-01-14T13:15:00Z",
-  },
-  {
-    id: "verlag-6",
-    name: "Thriller & Krimi Verlag",
-    description: "Spezialisiert auf spannende Thriller und Kriminalromane.",
-    website: "https://thriller-krimi-verlag.de",
-    contact_email: "redaktion@thriller-krimi-verlag.de",
-    project_count: 22,
-    created_at: "2024-01-15T08:30:00Z",
-    updated_at: "2024-01-15T08:30:00Z",
-  },
-  {
-    id: "verlag-7",
-    name: "Historischer Verlag",
-    description: "Historische Romane und Sachbücher zur Geschichte.",
-    website: "https://historischerverlag.de",
-    contact_email: "geschichte@historischerverlag.de",
-    project_count: 10,
-    created_at: "2024-01-16T10:00:00Z",
-    updated_at: "2024-01-16T10:00:00Z",
-  },
-  {
-    id: "verlag-8",
-    name: "Bildungsverlag Nord",
-    description: "Verlag für Bildungs- und Lehrmaterialien.",
-    website: "https://bildungsverlag-nord.de",
-    contact_email: "bildung@bildungsverlag-nord.de",
-    project_count: 30,
-    created_at: "2024-01-17T15:45:00Z",
-    updated_at: "2024-01-17T15:45:00Z",
   },
 ];
 
